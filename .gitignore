@@ -12,6 +12,7 @@ credentials.json
 token.json
 *.secret.toml
 artifacts/runtime/
+artifacts/**/runtime/
 config/matches/*.json
 !config/matches/.gitkeep
 .idea/
@@ -19,4 +20,3 @@ config/matches/*.json
 dist/
 build/
 *.egg-info/
-
