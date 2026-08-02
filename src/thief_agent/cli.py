@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     peer.add_argument("--config", default="config/game.toml.example")
     replay = commands.add_parser("replay", help="verify a completed log")
     replay.add_argument("log", type=Path)
+    replay.add_argument("--config", type=Path, default=Path("config/game.json"))
     report = commands.add_parser("report", help="process an agreed result")
     report.add_argument("result", type=Path)
     return parser
@@ -37,6 +38,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "validate":
         print(json.dumps(asdict(sdk.validate_config(Path(args.file))), sort_keys=True))
         return 0
+    if args.command == "replay":
+        replay_report = sdk.verify_replay(args.log, args.config)
+        print(json.dumps(asdict(replay_report), sort_keys=True))
+        return 0 if replay_report.status == "Verified OK" else 1
+    if args.command == "report":
+        result_report = sdk.validate_result(args.result)
+        print(json.dumps(asdict(result_report), sort_keys=True))
+        return 0 if result_report.confirmed else 1
     print(sdk.foundation_status())
     return 0
 

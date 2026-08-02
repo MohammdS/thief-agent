@@ -7,5 +7,5 @@
 | P0 | Protocol | Complete | two-process contract and tamper tests |
 | P0 | Strategy | Complete | legal two-ply evasion and grounded hints |
 | P0 | Reliability | Complete | bounded failures, checkpoints, reports |
-| P1 | GUI/replay | Pending | local truth and verified/tampered views |
+| P1 | GUI/replay | Complete | local truth and verified/tampered views |
 | P1 | Qualification | Pending | six terminating subgames and full QA |

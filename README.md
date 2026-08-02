@@ -81,9 +81,16 @@ Police repository: `REPLACE_WITH_COMPANION_POLICE_REPOSITORY`
 - [Documented architecture decisions](docs/decisions.md)
 - [Bayesian evasion and grounded language strategy](docs/strategy.md)
 - [Reliability, artifacts, and Gmail reporting](docs/reliability-reporting.md)
+- [Local-truth GUI and verified replay](docs/gui-replay.md)
 - [Tracked work](docs/TODO.md)
 - [Mechanism PRDs](prd/)
 - [Prompt engineering log](docs/prompt-engineering-log.md)
+
+## Visual evidence
+
+![Live local-truth Thief view](docs/screenshots/thief-live-local-truth.png)
+
+![Post-match verified replay](docs/screenshots/thief-replay-verified.png)
 
 ## License
 

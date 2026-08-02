@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field
 
 from thief_agent.artifacts.common import ArtifactLinks, ArtifactModel, MutualAgreement
+from thief_agent.config.loader import canonical_json_bytes
 from thief_agent.protocol.envelope import HASH_PATTERN
 
 
@@ -57,3 +59,8 @@ class MatchLogArtifact(ArtifactModel):
     records: tuple[LogRecord, ...]
     mutual_agreement: MutualAgreement
 
+
+def log_sha256(log: MatchLogArtifact) -> str:
+    """Hash the complete ordered log without its self-referential agreement."""
+    payload = log.model_dump(mode="json", by_alias=True, exclude={"mutual_agreement"})
+    return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()

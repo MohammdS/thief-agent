@@ -14,7 +14,7 @@
 - [x] Implement FastMCP contract and cryptographic integrity.
 - [x] Implement evasion strategy and grounded language providers.
 - [x] Implement reliability, artifacts, and reporting.
-- [ ] Implement GUI and verified replay.
+- [x] Implement GUI and verified replay.
 - [ ] Complete qualification evidence and release documentation.
 
 Definition of done: the implementation passes clean-install, lint, strict typing,
