@@ -4,14 +4,24 @@ from __future__ import annotations
 
 import platform
 import sys
+from asyncio import run
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from thief_agent import __version__
 from thief_agent.artifacts.match_log import MatchLogArtifact
 from thief_agent.artifacts.result import ResultArtifact, result_sha256
-from thief_agent.config import config_sha256, load_shared_config
+from thief_agent.config import (
+    config_sha256,
+    load_local_config,
+    load_shared_config,
+)
+from thief_agent.network.server import build_server
+from thief_agent.protocol.service import ProtocolService
 from thief_agent.replay.verifier import ReplayVerifier
+from thief_agent.reporting.gatekeeper import default_reporting_gatekeeper
+from thief_agent.reporting.gmail import DeliveryReceipt, GmailReporter
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,10 +74,6 @@ class ThiefSdk:
             config_exists=config_path.is_file(),
         )
 
-    def foundation_status(self) -> str:
-        """Return the honest implementation status for scaffolded commands."""
-        return "foundation-ready; gameplay milestones are not implemented yet"
-
     def validate_config(self, path: Path) -> ConfigReport:
         """Validate and identify one shared game configuration."""
         config = load_shared_config(path)
@@ -90,3 +96,27 @@ class ThiefSdk:
         digest = result_sha256(result)
         confirmed = result.mutual_agreement.confirmed and result.mutual_agreement.sha256 == digest
         return ResultReport(result.game_id, confirmed, digest)
+
+    def run_peer(self, local_path: Path, shared_path: Path) -> None:
+        """Serve the seven-tool Thief FastMCP endpoint until interrupted."""
+        local = load_local_config(local_path)
+        shared = load_shared_config(shared_path)
+        service = ProtocolService(shared.game_id, config_sha256(shared))
+        server = build_server(service)
+        server.run(
+            transport="http",
+            host=local.peer.host,
+            port=local.peer.port,
+            path="/mcp",
+            show_banner=True,
+        )
+
+    def deliver_result(
+        self,
+        path: Path,
+        mode: Literal["dry-run", "live"],
+        state_dir: Path,
+    ) -> DeliveryReceipt:
+        """Deliver a mutually agreed result through the protected reporter."""
+        reporter = GmailReporter(mode, state_dir, default_reporting_gatekeeper(state_dir))
+        return run(reporter.send(path))

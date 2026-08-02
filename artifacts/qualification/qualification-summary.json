@@ -1,0 +1,64 @@
+{
+  "game_id": "UNCOUNTED-DEVELOPMENT",
+  "games": [
+    {
+      "subgame": 1,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    },
+    {
+      "subgame": 2,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    },
+    {
+      "subgame": 3,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    },
+    {
+      "subgame": 4,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    },
+    {
+      "subgame": 5,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    },
+    {
+      "subgame": 6,
+      "outcome": "survival",
+      "steps": 35,
+      "police_score": 5,
+      "thief_score": 10,
+      "replay_status": "Verified OK",
+      "barriers_placed": 5
+    }
+  ],
+  "all_terminated": true,
+  "all_verified": true,
+  "corrupted_replay_status": "TAMPERED",
+  "total_police_score": 30,
+  "total_thief_score": 60
+}

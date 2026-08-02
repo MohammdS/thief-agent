@@ -15,7 +15,10 @@
 - [x] Implement evasion strategy and grounded language providers.
 - [x] Implement reliability, artifacts, and reporting.
 - [x] Implement GUI and verified replay.
-- [ ] Complete qualification evidence and release documentation.
+- [x] Complete uncounted qualification evidence and release documentation.
+
+The deterministic Police stub proves the local pipeline only. Companion interoperability,
+counted play, and final submission metadata remain required before release tagging.
 
 Definition of done: the implementation passes clean-install, lint, strict typing,
 branch-aware coverage, schema, security, line-limit, replay, and six-subgame gates.

@@ -9,7 +9,12 @@ REQUIRED = (
     "README.md", "PLAN.md", "TODO.md", "pyproject.toml", "uv.lock",
     "docs/PRD.md", "docs/PLAN.md", "docs/TODO.md", "config/game.json",
 )
-PLACEHOLDERS = ("GROUP_ID", "REPLACE_ME", "REPLACE_WITH_COMPANION")
+PLACEHOLDERS = (
+    "GROUP_ID",
+    "REPLACE_ME",
+    "REPLACE_STUDENT_ID",
+    "REPLACE_WITH_COMPANION",
+)
 
 
 def find_issues(root: Path, allow_placeholders: bool = False) -> list[str]:

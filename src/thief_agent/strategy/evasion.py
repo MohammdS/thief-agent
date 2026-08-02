@@ -27,8 +27,25 @@ class MoveEvaluation:
     total: float
 
 
+@dataclass(frozen=True, slots=True)
+class EvasionWeights:
+    """Configure the interpretable terms of the movement heuristic."""
+
+    capture_risk: float = 50.0
+    belief_distance: float = 2.0
+    reachable_area: float = 0.15
+    mobility: float = 1.5
+    next_escape: float = 4.0
+    dead_end: float = 3.0
+    revisit: float = 1.5
+
+
 class EvasionStrategy:
     """Choose legal movement without delegating geometry to an LLM."""
+
+    def __init__(self, weights: EvasionWeights | None = None) -> None:
+        """Use assignment defaults unless sensitivity weights are supplied."""
+        self._weights = weights or EvasionWeights()
 
     def choose_move(self, observation: ThiefObservation) -> Move:
         """Return the highest-scoring legal move with stable ties."""
@@ -57,9 +74,15 @@ class EvasionStrategy:
             default=0.0,
         )
         revisit = observation.recent_positions.count(target)
+        weights = self._weights
         total = (
-            -50.0 * risk + 2.0 * distance + 0.15 * area + 1.5 * mobility
-            + 4.0 * next_escape - 3.0 * (4 - mobility) - 1.5 * revisit
+            -weights.capture_risk * risk
+            + weights.belief_distance * distance
+            + weights.reachable_area * area
+            + weights.mobility * mobility
+            + weights.next_escape * next_escape
+            - weights.dead_end * (4 - mobility)
+            - weights.revisit * revisit
         )
         return MoveEvaluation(
             move, target, risk, distance, area, mobility, next_escape, revisit, total,

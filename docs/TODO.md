@@ -8,4 +8,7 @@
 | P0 | Strategy | Complete | legal two-ply evasion and grounded hints |
 | P0 | Reliability | Complete | bounded failures, checkpoints, reports |
 | P1 | GUI/replay | Complete | local truth and verified/tampered views |
-| P1 | Qualification | Pending | six terminating subgames and full QA |
+| P1 | Qualification | Complete (stub) | six terminating subgames and full QA |
+
+Companion interoperability and counted play remain blocked on the independent Police URL
+and final team metadata; the stub result is not competitive evidence.

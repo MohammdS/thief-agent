@@ -3,7 +3,12 @@ from hypothesis import strategies as st
 
 from thief_agent.domain.board import destination
 from thief_agent.domain.types import Coord, Move
-from thief_agent.strategy.evasion import EvasionStrategy, is_open, legal_local_moves
+from thief_agent.strategy.evasion import (
+    EvasionStrategy,
+    EvasionWeights,
+    is_open,
+    legal_local_moves,
+)
 from thief_agent.strategy.observation import ThiefObservation
 
 
@@ -58,3 +63,15 @@ def test_evaluations_are_deterministic_and_interpretable() -> None:
     current = observation()
     assert strategy.evaluate_moves(current) == strategy.evaluate_moves(current)
     assert all(item.reachable_area > 0 for item in strategy.evaluate_moves(current))
+
+
+def test_capture_weight_is_exposed_for_sensitivity_analysis() -> None:
+    current = observation(belief={Coord(2, 3): 1.0})
+    baseline = EvasionStrategy().evaluate_moves(current)
+    cautious = EvasionStrategy(EvasionWeights(capture_risk=80)).evaluate_moves(current)
+    by_move = {item.move: item for item in cautious}
+    assert all(
+        by_move[item.move].total <= item.total
+        for item in baseline
+        if item.capture_risk > 0
+    )

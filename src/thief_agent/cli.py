@@ -19,12 +19,15 @@ def build_parser() -> argparse.ArgumentParser:
     validate = commands.add_parser("validate", help="validate shared configuration")
     validate.add_argument("file", nargs="?", default="config/game.json")
     peer = commands.add_parser("peer", help="start the Thief peer")
-    peer.add_argument("--config", default="config/game.toml.example")
+    peer.add_argument("--config", type=Path, default=Path("config/game.secret.toml"))
+    peer.add_argument("--game-config", type=Path, default=Path("config/game.json"))
     replay = commands.add_parser("replay", help="verify a completed log")
     replay.add_argument("log", type=Path)
     replay.add_argument("--config", type=Path, default=Path("config/game.json"))
     report = commands.add_parser("report", help="process an agreed result")
     report.add_argument("result", type=Path)
+    report.add_argument("--mode", choices=("validate", "dry-run", "live"), default="validate")
+    report.add_argument("--state-dir", type=Path, default=Path("artifacts/reporting/runtime"))
     return parser
 
 
@@ -43,10 +46,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(asdict(replay_report), sort_keys=True))
         return 0 if replay_report.status == "Verified OK" else 1
     if args.command == "report":
+        if args.mode != "validate":
+            receipt = sdk.deliver_result(args.result, args.mode, args.state_dir)
+            print(json.dumps(asdict(receipt), sort_keys=True, default=str))
+            return 0
         result_report = sdk.validate_result(args.result)
         print(json.dumps(asdict(result_report), sort_keys=True))
         return 0 if result_report.confirmed else 1
-    print(sdk.foundation_status())
+    sdk.run_peer(args.config, args.game_config)
     return 0
 
 
