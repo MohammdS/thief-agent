@@ -9,8 +9,8 @@
 ## Milestones
 
 - [x] Define the approved implementation milestones.
-- [ ] Scaffold and validate the standalone project foundation.
-- [ ] Implement domain rules and shared configuration validation.
+- [x] Scaffold and validate the standalone project foundation.
+- [x] Implement domain rules and shared configuration validation.
 - [ ] Implement FastMCP contract and cryptographic integrity.
 - [ ] Implement evasion strategy and grounded language providers.
 - [ ] Implement reliability, artifacts, and reporting.
@@ -19,4 +19,3 @@
 
 Definition of done: the implementation passes clean-install, lint, strict typing,
 branch-aware coverage, schema, security, line-limit, replay, and six-subgame gates.
-

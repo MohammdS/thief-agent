@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from thief_agent import __version__
+from thief_agent.config import config_sha256, load_shared_config
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +19,16 @@ class DoctorReport:
     python: str
     platform: str
     config_exists: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ConfigReport:
+    """Describe a successfully validated shared configuration."""
+
+    game_id: str
+    counted: bool
+    subgames: int
+    sha256: str
 
 
 class ThiefSdk:
@@ -36,3 +47,12 @@ class ThiefSdk:
         """Return the honest implementation status for scaffolded commands."""
         return "foundation-ready; gameplay milestones are not implemented yet"
 
+    def validate_config(self, path: Path) -> ConfigReport:
+        """Validate and identify one shared game configuration."""
+        config = load_shared_config(path)
+        return ConfigReport(
+            game_id=config.game_id,
+            counted=config.counted,
+            subgames=config.series.subgames,
+            sha256=config_sha256(config),
+        )

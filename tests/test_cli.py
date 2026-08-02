@@ -13,3 +13,10 @@ def test_peer_command_is_available(capsys: object) -> None:
     assert main(["peer"]) == 0
     assert "foundation-ready" in capsys.readouterr().out  # type: ignore[attr-defined]
 
+
+def test_validate_command_reports_config_hash(capsys: object) -> None:
+    assert main(["validate"]) == 0
+    output = json.loads(capsys.readouterr().out)  # type: ignore[attr-defined]
+    assert output["subgames"] == 6
+    assert len(output["sha256"]) == 64
+

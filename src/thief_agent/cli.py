@@ -34,6 +34,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "doctor":
         print(json.dumps(asdict(sdk.doctor()), sort_keys=True))
         return 0
+    if args.command == "validate":
+        print(json.dumps(asdict(sdk.validate_config(Path(args.file))), sort_keys=True))
+        return 0
     print(sdk.foundation_status())
     return 0
 
