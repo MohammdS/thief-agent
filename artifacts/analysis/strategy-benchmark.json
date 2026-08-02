@@ -1,0 +1,45 @@
+[
+  {
+    "scenario": 1,
+    "chosen_move": "N",
+    "legal_moves": [
+      "N",
+      "E",
+      "S",
+      "W",
+      "STAY"
+    ],
+    "best_score": 18.98265306122449
+  },
+  {
+    "scenario": 2,
+    "chosen_move": "E",
+    "legal_moves": [
+      "E",
+      "S",
+      "STAY"
+    ],
+    "best_score": 19.094897959183672
+  },
+  {
+    "scenario": 3,
+    "chosen_move": "N",
+    "legal_moves": [
+      "N",
+      "E",
+      "S",
+      "STAY"
+    ],
+    "best_score": 18.83265306122449
+  },
+  {
+    "scenario": 4,
+    "chosen_move": "N",
+    "legal_moves": [
+      "N",
+      "W",
+      "STAY"
+    ],
+    "best_score": 19.094897959183672
+  }
+]

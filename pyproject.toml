@@ -59,6 +59,7 @@ addopts = "-ra --strict-config --strict-markers --cov=thief_agent --cov-branch"
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+markers = ["ollama: opt-in live test requiring a local Ollama model"]
 
 [tool.coverage.run]
 branch = true

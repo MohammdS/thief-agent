@@ -12,7 +12,7 @@
 - [x] Scaffold and validate the standalone project foundation.
 - [x] Implement domain rules and shared configuration validation.
 - [x] Implement FastMCP contract and cryptographic integrity.
-- [ ] Implement evasion strategy and grounded language providers.
+- [x] Implement evasion strategy and grounded language providers.
 - [ ] Implement reliability, artifacts, and reporting.
 - [ ] Implement GUI and verified replay.
 - [ ] Complete qualification evidence and release documentation.
