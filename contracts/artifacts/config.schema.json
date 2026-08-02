@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "ArtifactLinks": {
+      "additionalProperties": false,
+      "description": "Link the four mandatory files by stable game-derived names.",
+      "properties": {
+        "_remark": {
+          "title": "Remark",
+          "type": "string"
+        },
+        "config": {
+          "title": "Config",
+          "type": "string"
+        },
+        "declaration": {
+          "title": "Declaration",
+          "type": "string"
+        },
+        "log": {
+          "title": "Log",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "_remark",
+        "declaration",
+        "config",
+        "log",
+        "result"
+      ],
+      "title": "ArtifactLinks",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Preserve assignment metadata around the validated shared rules.",
+  "properties": {
+    "_note": {
+      "title": "Note",
+      "type": "string"
+    },
+    "_schema": {
+      "title": "Schema",
+      "type": "string"
+    },
+    "agreed_between": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Agreed Between",
+      "type": "array"
+    },
+    "board_and_agents": {
+      "additionalProperties": true,
+      "title": "Board And Agents",
+      "type": "object"
+    },
+    "config_name": {
+      "title": "Config Name",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "game_id": {
+      "title": "Game Id",
+      "type": "string"
+    },
+    "game_uid": {
+      "title": "Game Uid",
+      "type": "string"
+    },
+    "links": {
+      "$ref": "#/$defs/ArtifactLinks"
+    },
+    "movement_and_barriers": {
+      "additionalProperties": true,
+      "title": "Movement And Barriers",
+      "type": "object"
+    },
+    "network_and_league": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Network And League",
+      "type": "object"
+    },
+    "pheromones": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "title": "Pheromones",
+      "type": "object"
+    },
+    "rate_limiter_gatekeeper": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "title": "Rate Limiter Gatekeeper",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scoring": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Scoring",
+      "type": "object"
+    },
+    "sub_game_number": {
+      "minimum": 1,
+      "title": "Sub Game Number",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "_schema",
+    "_note",
+    "agreed_between",
+    "board_and_agents",
+    "movement_and_barriers",
+    "scoring",
+    "pheromones",
+    "network_and_league",
+    "rate_limiter_gatekeeper",
+    "game_id",
+    "game_uid",
+    "sub_game_number",
+    "links",
+    "config_name",
+    "config_sha256"
+  ],
+  "title": "AgreedConfigArtifact",
+  "type": "object"
+}

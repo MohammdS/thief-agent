@@ -1,0 +1,253 @@
+{
+  "$defs": {
+    "ArtifactLinks": {
+      "additionalProperties": false,
+      "description": "Link the four mandatory files by stable game-derived names.",
+      "properties": {
+        "_remark": {
+          "title": "Remark",
+          "type": "string"
+        },
+        "config": {
+          "title": "Config",
+          "type": "string"
+        },
+        "declaration": {
+          "title": "Declaration",
+          "type": "string"
+        },
+        "log": {
+          "title": "Log",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "_remark",
+        "declaration",
+        "config",
+        "log",
+        "result"
+      ],
+      "title": "ArtifactLinks",
+      "type": "object"
+    },
+    "LogAudit": {
+      "additionalProperties": false,
+      "description": "Summarize replay audit coverage.",
+      "properties": {
+        "failed_steps": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Failed Steps",
+          "type": "array"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "verified_steps": {
+          "minimum": 0,
+          "title": "Verified Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "passed",
+        "verified_steps"
+      ],
+      "title": "LogAudit",
+      "type": "object"
+    },
+    "LogRecord": {
+      "additionalProperties": false,
+      "description": "Store one canonical payload, final nonce, and public commitment.",
+      "properties": {
+        "commit": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Commit",
+          "type": "string"
+        },
+        "nonce": {
+          "pattern": "^[0-9a-f]{32,64}$",
+          "title": "Nonce",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "payload",
+        "nonce",
+        "commit"
+      ],
+      "title": "LogRecord",
+      "type": "object"
+    },
+    "LogSummary": {
+      "additionalProperties": false,
+      "description": "Summarize one role's view of a subgame.",
+      "properties": {
+        "audit": {
+          "$ref": "#/$defs/LogAudit"
+        },
+        "duration_seconds": {
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "ended_at": {
+          "format": "date-time",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "opponent_group_id": {
+          "title": "Opponent Group Id",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        },
+        "role": {
+          "const": "thief",
+          "default": "thief",
+          "title": "Role",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "steps": {
+          "minimum": 0,
+          "title": "Steps",
+          "type": "integer"
+        },
+        "sub_game_number": {
+          "minimum": 1,
+          "title": "Sub Game Number",
+          "type": "integer"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "tokens_total": {
+          "minimum": 0,
+          "title": "Tokens Total",
+          "type": "integer"
+        },
+        "winner_role": {
+          "enum": [
+            "police",
+            "thief",
+            "tie",
+            "technical_loss"
+          ],
+          "title": "Winner Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sub_game_number",
+        "group_id",
+        "opponent_group_id",
+        "result",
+        "winner_role",
+        "steps",
+        "timezone",
+        "started_at",
+        "ended_at",
+        "duration_seconds",
+        "tokens_total",
+        "audit"
+      ],
+      "title": "LogSummary",
+      "type": "object"
+    },
+    "MutualAgreement": {
+      "additionalProperties": false,
+      "description": "Record the peer-calculated canonical artifact hash agreement.",
+      "properties": {
+        "confirmed": {
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "confirmed"
+      ],
+      "title": "MutualAgreement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Represent the supplied replay-consumable log shape.",
+  "properties": {
+    "_schema": {
+      "title": "Schema",
+      "type": "string"
+    },
+    "game_id": {
+      "title": "Game Id",
+      "type": "string"
+    },
+    "game_uid": {
+      "title": "Game Uid",
+      "type": "string"
+    },
+    "links": {
+      "$ref": "#/$defs/ArtifactLinks"
+    },
+    "mutual_agreement": {
+      "$ref": "#/$defs/MutualAgreement"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/LogRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/LogSummary"
+    }
+  },
+  "required": [
+    "_schema",
+    "game_id",
+    "game_uid",
+    "links",
+    "summary",
+    "records",
+    "mutual_agreement"
+  ],
+  "title": "MatchLogArtifact",
+  "type": "object"
+}

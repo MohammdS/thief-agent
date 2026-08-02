@@ -13,7 +13,7 @@
 - [x] Implement domain rules and shared configuration validation.
 - [x] Implement FastMCP contract and cryptographic integrity.
 - [x] Implement evasion strategy and grounded language providers.
-- [ ] Implement reliability, artifacts, and reporting.
+- [x] Implement reliability, artifacts, and reporting.
 - [ ] Implement GUI and verified replay.
 - [ ] Complete qualification evidence and release documentation.
 

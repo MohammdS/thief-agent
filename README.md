@@ -80,6 +80,7 @@ Police repository: `REPLACE_WITH_COMPANION_POLICE_REPOSITORY`
 - [Architecture and implementation plan](docs/PLAN.md)
 - [Documented architecture decisions](docs/decisions.md)
 - [Bayesian evasion and grounded language strategy](docs/strategy.md)
+- [Reliability, artifacts, and Gmail reporting](docs/reliability-reporting.md)
 - [Tracked work](docs/TODO.md)
 - [Mechanism PRDs](prd/)
 - [Prompt engineering log](docs/prompt-engineering-log.md)

@@ -1,0 +1,256 @@
+{
+  "$defs": {
+    "ArtifactLinks": {
+      "additionalProperties": false,
+      "description": "Link the four mandatory files by stable game-derived names.",
+      "properties": {
+        "_remark": {
+          "title": "Remark",
+          "type": "string"
+        },
+        "config": {
+          "title": "Config",
+          "type": "string"
+        },
+        "declaration": {
+          "title": "Declaration",
+          "type": "string"
+        },
+        "log": {
+          "title": "Log",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "_remark",
+        "declaration",
+        "config",
+        "log",
+        "result"
+      ],
+      "title": "ArtifactLinks",
+      "type": "object"
+    },
+    "GroupDeclaration": {
+      "additionalProperties": false,
+      "description": "Declare one team's identity, endpoints, model, and signature.",
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "group_name": {
+          "title": "Group Name",
+          "type": "string"
+        },
+        "hardware_spec": {
+          "$ref": "#/$defs/HardwareSpec"
+        },
+        "llm_model": {
+          "title": "Llm Model",
+          "type": "string"
+        },
+        "mcp_servers": {
+          "$ref": "#/$defs/McpServers"
+        },
+        "members": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Members",
+          "type": "array"
+        },
+        "repos": {
+          "$ref": "#/$defs/RepositoryLinks"
+        },
+        "signature": {
+          "title": "Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "group_id",
+        "group_name",
+        "members",
+        "repos",
+        "mcp_servers",
+        "llm_model",
+        "hardware_spec",
+        "signature"
+      ],
+      "title": "GroupDeclaration",
+      "type": "object"
+    },
+    "HardwareSpec": {
+      "additionalProperties": false,
+      "description": "Describe declared compute hardware without secrets.",
+      "properties": {
+        "cpu_cores": {
+          "minimum": 1,
+          "title": "Cpu Cores",
+          "type": "integer"
+        },
+        "cpu_freq_mhz": {
+          "minimum": 0,
+          "title": "Cpu Freq Mhz",
+          "type": "number"
+        },
+        "cpu_type": {
+          "title": "Cpu Type",
+          "type": "string"
+        },
+        "gpu_model": {
+          "title": "Gpu Model",
+          "type": "string"
+        },
+        "ram_gb": {
+          "exclusiveMinimum": 0,
+          "title": "Ram Gb",
+          "type": "number"
+        },
+        "vram_gb": {
+          "minimum": 0,
+          "title": "Vram Gb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "cpu_type",
+        "cpu_freq_mhz",
+        "cpu_cores",
+        "ram_gb",
+        "gpu_model",
+        "vram_gb"
+      ],
+      "title": "HardwareSpec",
+      "type": "object"
+    },
+    "McpServers": {
+      "additionalProperties": false,
+      "description": "Publish both role endpoints for one group.",
+      "properties": {
+        "cop": {
+          "title": "Cop",
+          "type": "string"
+        },
+        "thief": {
+          "title": "Thief",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cop",
+        "thief"
+      ],
+      "title": "McpServers",
+      "type": "object"
+    },
+    "RepositoryLinks": {
+      "additionalProperties": false,
+      "description": "Publish both role repositories for one group.",
+      "properties": {
+        "cop": {
+          "title": "Cop",
+          "type": "string"
+        },
+        "thief": {
+          "title": "Thief",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cop",
+        "thief"
+      ],
+      "title": "RepositoryLinks",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Represent the supplied whole-series declaration shape.",
+  "properties": {
+    "_schema": {
+      "title": "Schema",
+      "type": "string"
+    },
+    "declaration_type": {
+      "const": "pre_game_declaration",
+      "default": "pre_game_declaration",
+      "title": "Declaration Type",
+      "type": "string"
+    },
+    "game_ended_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Game Ended At"
+    },
+    "game_id": {
+      "title": "Game Id",
+      "type": "string"
+    },
+    "game_started_at": {
+      "format": "date-time",
+      "title": "Game Started At",
+      "type": "string"
+    },
+    "game_uid": {
+      "title": "Game Uid",
+      "type": "string"
+    },
+    "groups": {
+      "additionalProperties": {
+        "$ref": "#/$defs/GroupDeclaration"
+      },
+      "title": "Groups",
+      "type": "object"
+    },
+    "links": {
+      "$ref": "#/$defs/ArtifactLinks"
+    },
+    "max_tokens_per_game": {
+      "exclusiveMinimum": 0,
+      "title": "Max Tokens Per Game",
+      "type": "integer"
+    },
+    "num_sub_games": {
+      "minimum": 1,
+      "title": "Num Sub Games",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "_schema",
+    "game_id",
+    "game_uid",
+    "links",
+    "timezone",
+    "game_started_at",
+    "num_sub_games",
+    "max_tokens_per_game",
+    "groups"
+  ],
+  "title": "DeclarationArtifact",
+  "type": "object"
+}

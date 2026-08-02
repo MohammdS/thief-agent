@@ -1,0 +1,300 @@
+{
+  "$defs": {
+    "ArtifactLinks": {
+      "additionalProperties": false,
+      "description": "Link the four mandatory files by stable game-derived names.",
+      "properties": {
+        "_remark": {
+          "title": "Remark",
+          "type": "string"
+        },
+        "config": {
+          "title": "Config",
+          "type": "string"
+        },
+        "declaration": {
+          "title": "Declaration",
+          "type": "string"
+        },
+        "log": {
+          "title": "Log",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "_remark",
+        "declaration",
+        "config",
+        "log",
+        "result"
+      ],
+      "title": "ArtifactLinks",
+      "type": "object"
+    },
+    "MutualAgreement": {
+      "additionalProperties": false,
+      "description": "Record the peer-calculated canonical artifact hash agreement.",
+      "properties": {
+        "confirmed": {
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "confirmed"
+      ],
+      "title": "MutualAgreement",
+      "type": "object"
+    },
+    "SeriesTotals": {
+      "additionalProperties": false,
+      "description": "Store aggregate scores, wins, ties, winner, and tokens.",
+      "properties": {
+        "series_tie": {
+          "title": "Series Tie",
+          "type": "boolean"
+        },
+        "sub_games_won": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Sub Games Won",
+          "type": "object"
+        },
+        "ties": {
+          "minimum": 0,
+          "title": "Ties",
+          "type": "integer"
+        },
+        "tokens_total_series": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Tokens Total Series",
+          "type": "object"
+        },
+        "total_score": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Total Score",
+          "type": "object"
+        },
+        "winner_group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Winner Group"
+        }
+      },
+      "required": [
+        "total_score",
+        "sub_games_won",
+        "ties",
+        "winner_group",
+        "series_tie",
+        "tokens_total_series"
+      ],
+      "title": "SeriesTotals",
+      "type": "object"
+    },
+    "SubGameResult": {
+      "additionalProperties": false,
+      "description": "Condense one audited subgame for both groups.",
+      "properties": {
+        "audit": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "title": "Audit",
+          "type": "object"
+        },
+        "ended_at": {
+          "format": "date-time",
+          "title": "Ended At",
+          "type": "string"
+        },
+        "github_commit": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Github Commit",
+          "type": "object"
+        },
+        "log_files": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Log Files",
+          "type": "object"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        },
+        "roles": {
+          "additionalProperties": {
+            "enum": [
+              "police",
+              "thief"
+            ],
+            "type": "string"
+          },
+          "title": "Roles",
+          "type": "object"
+        },
+        "score": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Score",
+          "type": "object"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "sub_game_number": {
+          "minimum": 1,
+          "title": "Sub Game Number",
+          "type": "integer"
+        },
+        "tie": {
+          "title": "Tie",
+          "type": "boolean"
+        },
+        "tokens": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Tokens",
+          "type": "object"
+        },
+        "winner_group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Winner Group"
+        }
+      },
+      "required": [
+        "sub_game_number",
+        "roles",
+        "started_at",
+        "ended_at",
+        "result",
+        "winner_group",
+        "tie",
+        "github_commit",
+        "tokens",
+        "score",
+        "log_files",
+        "audit"
+      ],
+      "title": "SubGameResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Represent the assignment final whole-series report shape.",
+  "properties": {
+    "_schema": {
+      "title": "Schema",
+      "type": "string"
+    },
+    "final_result": {
+      "$ref": "#/$defs/SeriesTotals"
+    },
+    "game_id": {
+      "title": "Game Id",
+      "type": "string"
+    },
+    "game_uid": {
+      "title": "Game Uid",
+      "type": "string"
+    },
+    "groups": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Groups",
+      "type": "array"
+    },
+    "links": {
+      "$ref": "#/$defs/ArtifactLinks"
+    },
+    "mutual_agreement": {
+      "$ref": "#/$defs/MutualAgreement"
+    },
+    "num_sub_games": {
+      "minimum": 1,
+      "title": "Num Sub Games",
+      "type": "integer"
+    },
+    "report_type": {
+      "const": "final_game_result",
+      "default": "final_game_result",
+      "title": "Report Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sub_games": {
+      "items": {
+        "$ref": "#/$defs/SubGameResult"
+      },
+      "title": "Sub Games",
+      "type": "array"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "_schema",
+    "game_id",
+    "game_uid",
+    "links",
+    "timezone",
+    "groups",
+    "num_sub_games",
+    "sub_games",
+    "final_result",
+    "mutual_agreement"
+  ],
+  "title": "ResultArtifact",
+  "type": "object"
+}
