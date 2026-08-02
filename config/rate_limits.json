@@ -1,0 +1,14 @@
+{
+  "gmail": {
+    "capacity": 2,
+    "refill_per_second": 0.0166666667,
+    "daily_quota": 20,
+    "circuit_breaker_failures": 3
+  },
+  "ollama": {
+    "capacity": 2,
+    "refill_per_second": 0.5,
+    "queue_depth": 100
+  }
+}
+

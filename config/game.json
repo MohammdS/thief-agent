@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "game_id": "UNCOUNTED-DEVELOPMENT",
+  "counted": false,
+  "group_id": "GROUP_ID",
+  "board": {
+    "width": 7,
+    "height": 7,
+    "coordinate_origin": "top-left-zero-based",
+    "thief_start": {"row": 3, "col": 3},
+    "police_start": {"row": 0, "col": 0},
+    "legal_moves": ["N", "S", "E", "W", "STAY"]
+  },
+  "barriers": {"police_capacity": 14},
+  "turns": {"max_steps": 35, "survival_threshold": 35},
+  "scent": {"field_size": 5, "center": 0.9, "decay": 0.1},
+  "scoring": {
+    "capture": {"police": 20, "thief": 5},
+    "survival": {"police": 5, "thief": 10},
+    "tie": {"police": 2, "thief": 2},
+    "technical_loss": {"police": 0, "thief": 0}
+  },
+  "series": {"subgames": 6, "diversity_reward": 10, "token_budget": 200000},
+  "network": {
+    "requests_per_minute": 30,
+    "concurrency": 2,
+    "retry_delay_seconds": 5,
+    "retries": 3,
+    "queue_depth": 100,
+    "response_timeout_seconds": 30,
+    "watchdog_seconds": 60
+  }
+}
+

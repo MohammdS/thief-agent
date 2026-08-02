@@ -1,0 +1,25 @@
+[identity]
+team_name = "REPLACE_ME"
+group_id = "GROUP_ID"
+role = "thief"
+
+[peer]
+host = "127.0.0.1"
+port = 8002
+opponent_mcp_url = "https://REPLACE_ME/mcp"
+
+[strategy]
+seed = 42
+language_provider = "template"
+ollama_model = "qwen3:8b"
+hint_every_n_steps = 1
+hint_word_limit = 15
+
+[ui]
+enabled = true
+headless = false
+
+[reporting]
+mode = "dry-run"
+recipient = "rmisegal+uoh26finalgame@gmail.com"
+

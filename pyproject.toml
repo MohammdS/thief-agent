@@ -1,0 +1,69 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "thief-agent"
+version = "0.1.0"
+description = "Standalone P2P thief peer for the distributed Police-and-Thief project"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "MohammdS" }]
+dependencies = [
+  "fastmcp==3.4.5",
+  "google-api-python-client>=2.176,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "httpx>=0.28,<1",
+  "jsonschema>=4.25,<5",
+  "pydantic>=2.11,<3",
+]
+
+[project.scripts]
+thief-agent = "thief_agent.cli:main"
+
+[dependency-groups]
+dev = [
+  "hypothesis>=6.135,<7",
+  "mypy>=1.16,<2",
+  "pip-audit>=2.9,<3",
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.0,<2",
+  "pytest-cov>=6.2,<8",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/thief_agent"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["thief_agent"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers --cov=thief_agent --cov-branch"
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85
