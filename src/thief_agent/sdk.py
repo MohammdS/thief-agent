@@ -12,16 +12,12 @@ from typing import Literal
 from thief_agent import __version__
 from thief_agent.artifacts.match_log import MatchLogArtifact
 from thief_agent.artifacts.result import ResultArtifact, result_sha256
-from thief_agent.config import (
-    config_sha256,
-    load_local_config,
-    load_shared_config,
-)
-from thief_agent.network.server import build_server
-from thief_agent.protocol.service import ProtocolService
+from thief_agent.config import config_sha256, load_shared_config
 from thief_agent.replay.verifier import ReplayVerifier
 from thief_agent.reporting.gatekeeper import default_reporting_gatekeeper
 from thief_agent.reporting.gmail import DeliveryReceipt, GmailReporter
+from thief_agent.runtime.entrypoint import run_peer_runtime
+from thief_agent.runtime.models import PeerSeriesRun
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,19 +93,15 @@ class ThiefSdk:
         confirmed = result.mutual_agreement.confirmed and result.mutual_agreement.sha256 == digest
         return ResultReport(result.game_id, confirmed, digest)
 
-    def run_peer(self, local_path: Path, shared_path: Path) -> None:
-        """Serve the seven-tool Thief FastMCP endpoint until interrupted."""
-        local = load_local_config(local_path)
-        shared = load_shared_config(shared_path)
-        service = ProtocolService(shared.game_id, config_sha256(shared))
-        server = build_server(service)
-        server.run(
-            transport="http",
-            host=local.peer.host,
-            port=local.peer.port,
-            path="/mcp",
-            show_banner=True,
-        )
+    def run_peer(
+        self,
+        local_path: Path,
+        shared_path: Path,
+        output: Path = Path("artifacts/matches"),
+        declaration_path: Path | None = None,
+    ) -> PeerSeriesRun:
+        """Run inbound MCP tools and the outbound autonomous series together."""
+        return run(run_peer_runtime(local_path, shared_path, output, declaration_path))
 
     def deliver_result(
         self,

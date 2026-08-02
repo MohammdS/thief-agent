@@ -7,6 +7,12 @@ Streamable HTTP at the negotiated `/mcp` URL.
 
 Every message carries schema version, game/subgame/step identity, sender role, UUID,
 timestamps, expiry, configuration hash, and prior-state hash. Unknown fields are rejected.
+
+Negotiation also locks the sender group, game UID, series UTC anchor, counted flag, and
+subgame count. The lower group ID coordinates the anchor to avoid dual-initiation races.
+Subgame result proposals exchange terminal-state digests, fixed scores, token use, and exact
+Git commits. A final series proposal confirms the canonical result artifact hash.
+
 ## Turn ordering
 
 1. Each peer creates a fresh 256-bit nonce and hashes canonical JSON binding the game,
@@ -31,4 +37,3 @@ canonical bytes with HMAC-SHA256 before entering the running-subgame state.
 The Police implementation should independently generate the schemas, reproduce both
 contract vectors, compare the shared configuration SHA-256, and run an uncounted localhost
 warm-up. Neither repository imports runtime code from the other.
-

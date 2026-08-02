@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from thief_agent.sdk import ThiefSdk
 
@@ -17,15 +17,17 @@ def test_sdk_validates_default_shared_configuration() -> None:
 
 
 def test_sdk_runs_peer_with_local_network_settings() -> None:
-    with patch("thief_agent.sdk.build_server") as build_server:
-        ThiefSdk().run_peer(
+    expected = object()
+    with patch(
+        "thief_agent.sdk.run_peer_runtime", new_callable=AsyncMock,
+    ) as run_runtime:
+        run_runtime.return_value = expected
+        actual = ThiefSdk().run_peer(
             Path("config/game.toml.example"),
             Path("config/game.json"),
         )
-    build_server.return_value.run.assert_called_once_with(
-        transport="http",
-        host="127.0.0.1",
-        port=8002,
-        path="/mcp",
-        show_banner=True,
+    assert actual is expected
+    run_runtime.assert_awaited_once_with(
+        Path("config/game.toml.example"), Path("config/game.json"),
+        Path("artifacts/matches"), None,
     )

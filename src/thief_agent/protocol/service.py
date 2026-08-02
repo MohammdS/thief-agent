@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from thief_agent.crypto.audit import AuditResult, FinalAuditRequest, verify_audit
+from thief_agent.crypto.audit import AuditRecord, AuditResult, FinalAuditRequest, verify_audit
+from thief_agent.domain.types import Role
 from thief_agent.protocol.firewall import AuditFirewall
 from thief_agent.protocol.ledger import TurnLedger
 from thief_agent.protocol.messages import (
@@ -25,8 +26,15 @@ class ProtocolService:
 
     game_id: str
     config_hash: str
+    role: Role = Role.THIEF
     ledger: TurnLedger = field(default_factory=TurnLedger)
     firewall: AuditFirewall = field(default_factory=AuditFirewall)
+    negotiation: NegotiationRequest | None = None
+    audit_records: dict[int, tuple[AuditRecord, ...]] = field(default_factory=dict)
+    audit_results: dict[int, AuditResult] = field(default_factory=dict)
+    result_proposals: dict[tuple[str, int, str], ResultProposalRequest] = field(
+        default_factory=dict,
+    )
 
     def _validate(self, request: object) -> None:
         """Validate the shared request envelope against local identity."""
@@ -40,12 +48,14 @@ class ProtocolService:
     def health(self, request: HealthRequest) -> HealthResponse:
         """Respond only after envelope validation."""
         self._validate(request)
-        return HealthResponse(config_sha256=self.config_hash)
+        return HealthResponse(role=self.role, config_sha256=self.config_hash)
 
     def negotiate(self, request: NegotiationRequest) -> Ack:
         """Accept only the fixed contract and counted six-game rule."""
         self._validate(request)
         accepted = not request.counted or request.subgames == 6
+        if accepted:
+            self.negotiation = request
         detail = "accepted" if accepted else "counted series requires six subgames"
         return Ack(message_id=request.envelope.message_id, accepted=accepted, detail=detail)
 
@@ -75,16 +85,27 @@ class ProtocolService:
         self._validate(request)
         result = verify_audit(request.records)
         errors = list(result.errors)
-        if len(request.records) != len(self.ledger.reveals):
+        subgame = request.envelope.subgame
+        relevant = {
+            key: reveal for key, reveal in self.ledger.reveals.items() if key[0] == subgame
+        }
+        if len(request.records) != len(relevant):
             errors.append("final disclosure count does not match reveal ledger")
         for index, record in enumerate(request.records):
             disclosure = record.disclosure
             key = (disclosure.subgame, disclosure.step, disclosure.role.value)
-            if self.ledger.reveals.get(key) != record.reveal:
+            if relevant.get(key) != record.reveal:
                 errors.append(f"record {index}: reveal absent from local ledger")
-        return AuditResult(status="TAMPERED" if errors else "Verified OK", errors=tuple(errors))
+        result = AuditResult(status="TAMPERED" if errors else "Verified OK", errors=tuple(errors))
+        self.audit_records[subgame], self.audit_results[subgame] = request.records, result
+        return result
 
     def propose_result(self, request: ResultProposalRequest) -> Ack:
         """Acknowledge an independently hashed result proposal."""
         self._validate(request)
+        key = (request.phase, request.envelope.subgame, request.sender_group_id)
+        existing = self.result_proposals.get(key)
+        if existing is not None and existing != request:
+            raise ValueError("conflicting result proposal")
+        self.result_proposals[key] = request
         return Ack(message_id=request.envelope.message_id, accepted=True, detail="result logged")

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 
 from tests.protocol_helpers import CONFIG_HASH, GAME_ID, commit_request, envelope, material
@@ -23,6 +25,8 @@ def test_health_and_negotiation_validate_identity_and_counted_rule() -> None:
     rejected = peer.negotiate(
         NegotiationRequest(
             envelope=envelope(), contract_version="1.0", counted=True, subgames=1,
+            sender_group_id="other-group", game_uid="game-uid",
+            series_started_at=datetime.now(UTC),
         )
     )
     assert not rejected.accepted

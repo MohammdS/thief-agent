@@ -7,6 +7,7 @@ role = "thief"
 host = "127.0.0.1"
 port = 8002
 opponent_mcp_url = "https://REPLACE_ME/mcp"
+opponent_group_id = "OPPONENT_GROUP_ID"
 
 [strategy]
 seed = 42
@@ -22,4 +23,3 @@ headless = false
 [reporting]
 mode = "dry-run"
 recipient = "rmisegal+uoh26finalgame@gmail.com"
-

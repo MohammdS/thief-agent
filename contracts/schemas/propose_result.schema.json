@@ -84,6 +84,19 @@
     "envelope": {
       "$ref": "#/$defs/WireEnvelope"
     },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "phase": {
+      "enum": [
+        "subgame",
+        "series"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
     "police_score": {
       "minimum": 0,
       "title": "Police Score",
@@ -94,17 +107,31 @@
       "title": "Result Sha256",
       "type": "string"
     },
+    "sender_group_id": {
+      "minLength": 1,
+      "title": "Sender Group Id",
+      "type": "string"
+    },
     "thief_score": {
       "minimum": 0,
       "title": "Thief Score",
+      "type": "integer"
+    },
+    "tokens_total": {
+      "minimum": 0,
+      "title": "Tokens Total",
       "type": "integer"
     }
   },
   "required": [
     "envelope",
+    "phase",
+    "sender_group_id",
     "result_sha256",
     "police_score",
-    "thief_score"
+    "thief_score",
+    "tokens_total",
+    "git_commit"
   ],
   "title": "ResultProposalRequest",
   "type": "object"

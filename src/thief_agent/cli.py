@@ -21,6 +21,8 @@ def build_parser() -> argparse.ArgumentParser:
     peer = commands.add_parser("peer", help="start the Thief peer")
     peer.add_argument("--config", type=Path, default=Path("config/game.secret.toml"))
     peer.add_argument("--game-config", type=Path, default=Path("config/game.json"))
+    peer.add_argument("--output", type=Path, default=Path("artifacts/matches"))
+    peer.add_argument("--declaration", type=Path)
     replay = commands.add_parser("replay", help="verify a completed log")
     replay.add_argument("log", type=Path)
     replay.add_argument("--config", type=Path, default=Path("config/game.json"))
@@ -53,7 +55,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         result_report = sdk.validate_result(args.result)
         print(json.dumps(asdict(result_report), sort_keys=True))
         return 0 if result_report.confirmed else 1
-    sdk.run_peer(args.config, args.game_config)
+    series = sdk.run_peer(args.config, args.game_config, args.output, args.declaration)
+    print(json.dumps({
+        "result_path": str(series.result_path),
+        "outcomes": [game.outcome.reason.value for game in series.games],
+    }, sort_keys=True))
     return 0
 
 

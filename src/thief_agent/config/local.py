@@ -25,6 +25,7 @@ class PeerSettings(StrictModel):
     host: str = Field(min_length=1)
     port: int = Field(ge=1, le=65535)
     opponent_mcp_url: str = Field(min_length=1)
+    opponent_group_id: str = Field(min_length=1)
 
 
 class StrategySettings(StrictModel):
@@ -65,4 +66,3 @@ def load_local_config(path: Path) -> LocalConfig:
     """Parse a private TOML file using strict local models."""
     with path.open("rb") as stream:
         return LocalConfig.model_validate(tomllib.load(stream))
-

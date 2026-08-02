@@ -3,7 +3,8 @@
 ## Prepare local configuration
 
 Copy `config/game.toml.example` to the ignored `config/game.secret.toml`. Replace team and
-group identity, then set `peer.opponent_mcp_url` to the companion Police `/mcp` endpoint.
+group identity, set `peer.opponent_group_id`, then set `peer.opponent_mcp_url` to the
+companion Police `/mcp` endpoint.
 Do not place access tokens or OAuth credentials in either configuration file.
 
 Start the Thief endpoint:
@@ -13,7 +14,10 @@ uv run thief-agent validate config/game.json
 uv run thief-agent peer --config config/game.secret.toml --game-config config/game.json
 ```
 
-The default local address is `http://127.0.0.1:8002/mcp`.
+The default local address is `http://127.0.0.1:8002/mcp`. This one command serves inbound
+tools and drives outbound health, negotiation, commitment, reveal, audit, and result calls.
+For a counted series, append `--declaration config/declaration.secret.json`; counted startup
+fails closed if that agreed file is absent.
 
 ## Optional ngrok exposure
 
@@ -37,6 +41,9 @@ re-run health and negotiation whenever either URL changes.
 6. Run one uncounted warm-up through commit, reveal, final audit, result proposal, replay,
    and dry-run report.
 7. Save declaration/config/log/result artifacts independently and compare result hashes.
+
+Start both peer commands. The lower group ID automatically proposes the shared UTC series
+anchor; the other mirrors it. Neither side reveals until both commitments are present.
 
 ## Failure handling
 

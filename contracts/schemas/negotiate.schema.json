@@ -93,6 +93,21 @@
     "envelope": {
       "$ref": "#/$defs/WireEnvelope"
     },
+    "game_uid": {
+      "minLength": 1,
+      "title": "Game Uid",
+      "type": "string"
+    },
+    "sender_group_id": {
+      "minLength": 1,
+      "title": "Sender Group Id",
+      "type": "string"
+    },
+    "series_started_at": {
+      "format": "date-time",
+      "title": "Series Started At",
+      "type": "string"
+    },
     "subgames": {
       "minimum": 1,
       "title": "Subgames",
@@ -103,7 +118,10 @@
     "envelope",
     "contract_version",
     "counted",
-    "subgames"
+    "subgames",
+    "sender_group_id",
+    "game_uid",
+    "series_started_at"
   ],
   "title": "NegotiationRequest",
   "type": "object"

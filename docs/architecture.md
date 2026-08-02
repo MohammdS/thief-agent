@@ -38,8 +38,13 @@ are idempotent for identical duplicate message IDs and fail for conflicting dupl
 
 ## Deployment boundary
 
-`thief-agent peer` serves the receiving half of the symmetric seven-tool protocol. The
-separate companion Police process must serve the corresponding endpoint and coordinate
-outbound calls using the committed schemas. The included qualification runner is isolated
-test infrastructure and calls only the deterministic Police stub; it must not be used as
-competitive evidence.
+`thief-agent peer` launches the receiving FastMCP server and outbound autonomous client
+loop in one process. The lexicographically smaller group ID anchors the series start and
+game UID; the other peer mirrors that exact negotiation. On every step both peers publish
+commitments, wait for the opponent commitment, reveal, validate, and continue. Every
+subgame ends with mutual nonce audit and an independently calculated terminal digest; the
+series ends only after the final result artifact hashes match.
+
+The separate companion Police process must implement the reciprocal contract. The included
+qualification runner remains isolated test infrastructure and calls only the deterministic
+Police stub; it must not be used as competitive evidence.

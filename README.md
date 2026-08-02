@@ -90,16 +90,18 @@ uv run thief-agent validate config/game.json
 ```
 
 Copy `config/game.toml.example` to the git-ignored `config/game.secret.toml`, then replace
-the identity and endpoint placeholders. Start the Thief protocol endpoint with:
+the identity, opponent group, and endpoint placeholders. Start the autonomous Thief peer:
 
 ```powershell
 uv run thief-agent peer --config config/game.secret.toml --game-config config/game.json
 ```
 
-It listens on the configured host/port at `/mcp`. Public exposure and two-peer setup are
-documented in the [network runbook](docs/public-network-runbook.md). The companion peer
-must independently reproduce the schemas, vectors, configuration hash, and turn ordering
-before a counted game.
+The command runs the FastMCP server and outbound client loop concurrently. Both peers lock
+the same series anchor, commit before either reveal, run every configured subgame, exchange
+final disclosures and result hashes, and write validated config/log/result artifacts under
+`artifacts/matches/`. It listens on the configured host/port at `/mcp`. A counted series
+also requires `--declaration PATH` so the pre-agreed declaration is preserved. Public
+exposure and setup are documented in the [network runbook](docs/public-network-runbook.md).
 
 ## Replay and reporting
 
@@ -125,7 +127,8 @@ circuit breaker.
 
 The automated suite covers physical invariants, scent, scoring, schemas, two-process MCP,
 commit-reveal/tampering, Bayesian filtering, legal action selection, LLM fallback,
-reliability, Gmail mocks, GUI information boundaries, replay, and the six-game harness.
+reliability, Gmail mocks, GUI information boundaries, the symmetric autonomous runtime,
+replay, and the six-game harness.
 The qualification package is pinned to commit
 `9b07886b126ca99aa8c0cb0d5f9eedfcb01b6426`; all six games terminated after 35 steps,
 all six replays verified, and a corruption probe returned `TAMPERED`. See

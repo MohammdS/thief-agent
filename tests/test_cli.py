@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from tests.artifact_helpers import unconfirmed_result
@@ -16,8 +17,11 @@ def test_doctor_command_emits_json(capsys: object) -> None:
 
 def test_peer_command_starts_configured_server() -> None:
     with patch("thief_agent.cli.ThiefSdk.run_peer") as run_peer:
+        run_peer.return_value = SimpleNamespace(result_path=Path("result.json"), games=())
         assert main(["peer", "--config", "local.toml", "--game-config", "game.json"]) == 0
-    run_peer.assert_called_once_with(Path("local.toml"), Path("game.json"))
+    run_peer.assert_called_once_with(
+        Path("local.toml"), Path("game.json"), Path("artifacts/matches"), None,
+    )
 
 
 def test_validate_command_reports_config_hash(capsys: object) -> None:
