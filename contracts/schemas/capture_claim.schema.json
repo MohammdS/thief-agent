@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "Role": {
+      "description": "Identify either autonomous peer role.",
+      "enum": [
+        "thief",
+        "police"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "WireEnvelope": {
+      "additionalProperties": false,
+      "description": "Bind a request to one peer, configuration, state, and deadline.",
+      "properties": {
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "game_id": {
+          "minLength": 1,
+          "title": "Game Id",
+          "type": "string"
+        },
+        "message_id": {
+          "format": "uuid",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "prior_state_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prior State Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sender": {
+          "$ref": "#/$defs/Role"
+        },
+        "step": {
+          "minimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "subgame": {
+          "minimum": 0,
+          "title": "Subgame",
+          "type": "integer"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "game_id",
+        "subgame",
+        "step",
+        "sender",
+        "message_id",
+        "timestamp",
+        "expires_at",
+        "config_sha256",
+        "prior_state_sha256"
+      ],
+      "title": "WireEnvelope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Claim one objectively auditable terminal capture condition.",
+  "properties": {
+    "envelope": {
+      "$ref": "#/$defs/WireEnvelope"
+    },
+    "evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Sha256",
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "overlap",
+        "barrier",
+        "imprisonment"
+      ],
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "envelope",
+    "reason",
+    "evidence_sha256"
+  ],
+  "title": "CaptureClaimRequest",
+  "type": "object"
+}

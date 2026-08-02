@@ -1,0 +1,182 @@
+{
+  "$defs": {
+    "ActionKind": {
+      "description": "Distinguish a movement turn from Police barrier placement.",
+      "enum": [
+        "move",
+        "barrier"
+      ],
+      "title": "ActionKind",
+      "type": "string"
+    },
+    "Move": {
+      "description": "Enumerate the fixed physical action alphabet.",
+      "enum": [
+        "N",
+        "S",
+        "E",
+        "W",
+        "STAY"
+      ],
+      "title": "Move",
+      "type": "string"
+    },
+    "PointConfig": {
+      "additionalProperties": false,
+      "description": "Represent a configured zero-based board coordinate.",
+      "properties": {
+        "col": {
+          "minimum": 0,
+          "title": "Col",
+          "type": "integer"
+        },
+        "row": {
+          "minimum": 0,
+          "title": "Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "row",
+        "col"
+      ],
+      "title": "PointConfig",
+      "type": "object"
+    },
+    "Role": {
+      "description": "Identify either autonomous peer role.",
+      "enum": [
+        "thief",
+        "police"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "TurnAction": {
+      "additionalProperties": false,
+      "description": "Represent exactly one physical turn action.",
+      "properties": {
+        "barrier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PointConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "$ref": "#/$defs/ActionKind"
+        },
+        "move": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Move"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "TurnAction",
+      "type": "object"
+    },
+    "WireEnvelope": {
+      "additionalProperties": false,
+      "description": "Bind a request to one peer, configuration, state, and deadline.",
+      "properties": {
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "game_id": {
+          "minLength": 1,
+          "title": "Game Id",
+          "type": "string"
+        },
+        "message_id": {
+          "format": "uuid",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "prior_state_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prior State Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sender": {
+          "$ref": "#/$defs/Role"
+        },
+        "step": {
+          "minimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "subgame": {
+          "minimum": 0,
+          "title": "Subgame",
+          "type": "integer"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "game_id",
+        "subgame",
+        "step",
+        "sender",
+        "message_id",
+        "timestamp",
+        "expires_at",
+        "config_sha256",
+        "prior_state_sha256"
+      ],
+      "title": "WireEnvelope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Reveal action and hint while withholding nonce and intent.",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/TurnAction"
+    },
+    "envelope": {
+      "$ref": "#/$defs/WireEnvelope"
+    },
+    "hint": {
+      "maxLength": 500,
+      "title": "Hint",
+      "type": "string"
+    }
+  },
+  "required": [
+    "envelope",
+    "action",
+    "hint"
+  ],
+  "title": "RevealTurnRequest",
+  "type": "object"
+}

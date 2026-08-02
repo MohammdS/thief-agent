@@ -1,0 +1,16 @@
+{
+  "canonical_json": "{\"action\":{\"barrier\":null,\"kind\":\"move\",\"move\":\"N\"},\"game_id\":\"vector-game\",\"hint\":\"The southern road feels safer\",\"intent\":\"bluff\",\"nonce\":\"0101010101010101010101010101010101010101010101010101010101010101\",\"prior_state_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"role\":\"thief\",\"step\":7,\"subgame\":1}",
+  "commitment_sha256": "b5f298da805c6d53381abcf0ca97b78b569fc3d967e6508ed60ec9c3e7de1d87",
+  "disclosure": {
+    "action": {"barrier": null, "kind": "move", "move": "N"},
+    "game_id": "vector-game",
+    "hint": "The southern road feels safer",
+    "intent": "bluff",
+    "nonce": "0101010101010101010101010101010101010101010101010101010101010101",
+    "prior_state_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "role": "thief",
+    "step": 7,
+    "subgame": 1
+  }
+}
+
