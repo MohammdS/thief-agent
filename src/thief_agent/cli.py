@@ -26,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
     replay = commands.add_parser("replay", help="verify a completed log")
     replay.add_argument("log", type=Path)
     replay.add_argument("--config", type=Path, default=Path("config/game.json"))
+    gui = commands.add_parser("gui", help="open the live local-truth monitor")
+    gui.add_argument("--config", type=Path, default=Path("config/game.json"))
+    gui.add_argument(
+        "--state", type=Path, default=Path("artifacts/matches/runtime/live.json"),
+    )
     report = commands.add_parser("report", help="process an agreed result")
     report.add_argument("result", type=Path)
     report.add_argument("--mode", choices=("validate", "dry-run", "live"), default="validate")
@@ -47,6 +52,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         replay_report = sdk.verify_replay(args.log, args.config)
         print(json.dumps(asdict(replay_report), sort_keys=True))
         return 0 if replay_report.status == "Verified OK" else 1
+    if args.command == "gui":
+        sdk.run_gui(args.config, args.state)
+        return 0
     if args.command == "report":
         if args.mode != "validate":
             receipt = sdk.deliver_result(args.result, args.mode, args.state_dir)

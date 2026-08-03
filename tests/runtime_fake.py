@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
-from thief_agent.config import config_sha256
-from thief_agent.config.models import SharedConfig
+from tests.support.fake_negotiation import police_proposal
+from thief_agent.config import SharedConfig, config_sha256
 from thief_agent.crypto.audit import AuditResult, FinalAuditRequest, verify_audit
 from thief_agent.crypto.commit_reveal import SealedTurn, TurnMaterial, seal_turn
 from thief_agent.domain.scent import ScentMap, advance_scent
@@ -39,28 +37,21 @@ class FakePoliceTransport:
 
     async def health(self, request: HealthRequest) -> HealthResponse:
         """Return an independently typed Police identity."""
-        thief_group = next(
-            group for group in self.config.agreed_between if group != self.opponent_group
+        thief_group = next(group for group in self.config.agreed_between
+                           if group != self.opponent_group)
+        proposal = police_proposal(
+            self.config, self.opponent_group, thief_group,
+            self._envelope(request.envelope.prior_state_sha256, 0, 0),
         )
-        if self.opponent_group < thief_group:
-            started_at = datetime.now(UTC).replace(microsecond=0)
-            self.service.negotiate(NegotiationRequest(
-                envelope=self._envelope(request.envelope.prior_state_sha256, 0, 0),
-                contract_version="1.1",
-                counted=self.config.counted,
-                subgames=self.config.series.subgames,
-                sender_group_id=self.opponent_group,
-                game_uid=f"{self.config.game_id}-{int(started_at.timestamp())}",
-                series_started_at=started_at,
-            ))
+        if proposal:
+            self.service.negotiate(proposal)
         return HealthResponse(role=Role.POLICE, config_sha256=config_sha256(self.config))
 
     async def negotiate(self, request: NegotiationRequest) -> Ack:
         """Accept the coordinator anchor and send the matching callback."""
         mirrored = request.model_copy(update={
             "envelope": self._envelope(request.envelope.prior_state_sha256, 0, 0),
-            "sender_group_id": self.opponent_group,
-        })
+            "sender_group_id": self.opponent_group})
         self.service.negotiate(mirrored)
         return self._ack(request, "accepted")
 
@@ -68,12 +59,10 @@ class FakePoliceTransport:
         """Create and callback one independently sealed Police commitment."""
         envelope = request.envelope
         previous = self.scents.get(envelope.subgame, {})
+        start = Coord(self.config.board.police_start.row, self.config.board.police_start.col)
         next_scent = advance_scent(
-            previous,
-            Coord(self.config.board.police_start.row, self.config.board.police_start.col),
-            self.config.board.width,
-            self.config.board.height,
-            self.config.scent.decay,
+            previous, start, self.config.board.width,
+            self.config.board.height, self.config.scent.decay,
         )
         self.scents[envelope.subgame] = next_scent
         material = TurnMaterial(
@@ -105,9 +94,8 @@ class FakePoliceTransport:
         sealed = self.sealed[(envelope.subgame, envelope.step)]
         disclosure = sealed.disclosure
         incoming = RevealTurnRequest(
-            envelope=self._envelope(
-                envelope.prior_state_sha256, envelope.subgame, envelope.step,
-            ),
+            envelope=self._envelope(envelope.prior_state_sha256,
+                                    envelope.subgame, envelope.step),
             scent_heatmap=disclosure.scent_heatmap,
             hint=disclosure.hint,
         )
@@ -123,11 +111,8 @@ class FakePoliceTransport:
             if game == subgame
         )
         incoming = FinalAuditRequest(
-            envelope=self._envelope(
-                request.envelope.prior_state_sha256,
-                subgame,
-                request.envelope.step,
-            ),
+            envelope=self._envelope(request.envelope.prior_state_sha256,
+                                    subgame, request.envelope.step),
             records=records,
         )
         self.service.final_audit(incoming)

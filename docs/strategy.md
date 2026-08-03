@@ -2,11 +2,12 @@
 
 ## Belief update
 
-The Thief starts from a uniform Police-location prior over non-barrier cells. Each full
-turn applies a Bayesian likelihood from the observed Police scent map. Explicit cardinal
-language can reweight board halves using a smoothed truth probability learned only from
-already audited hints. Blocked cells always receive zero mass and every posterior is
-normalized.
+The shared Police start supplies the first point belief. Before each decision,
+`predict_belief` spreads probability over legal Police N/S/E/W/STAY destinations and
+removes public barriers. After Police reveals its heatmap, the Thief tests every legal cell
+against the complete deterministic scent recurrence. Exactly one matching emitter becomes
+the next point belief; zero or ambiguous matches fail closed. This derives only from the
+public heatmap and locked formula, never objective Police state.
 
 ## Algorithmic movement
 
@@ -35,4 +36,3 @@ Ollama must return strict JSON. The grounder requires the selected direction cue
 conflicting cues and coordinates, enforces the negotiated word limit, and counts prompt
 and completion tokens. Timeout, HTTP error, malformed JSON, unknown fields, hallucinated
 direction, or coordinate leakage causes a deterministic template fallback.
-

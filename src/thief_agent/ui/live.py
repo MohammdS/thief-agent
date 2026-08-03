@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 
 from thief_agent.ui.canvas import CELL_SIZE, GRID_MARGIN, draw_live_board
 from thief_agent.ui.model import LiveSnapshot
@@ -42,6 +43,18 @@ class LiveGui:
     def run(self) -> None:
         """Enter the Tk event loop."""
         self._root.mainloop()
+
+    def monitor(
+        self, loader: Callable[[], LiveSnapshot | None], interval_ms: int = 250,
+    ) -> None:
+        """Poll an atomic snapshot source without blocking Tk events."""
+        def refresh() -> None:
+            snapshot = loader()
+            if snapshot is not None:
+                self.update(snapshot)
+            self._root.after(interval_ms, refresh)
+
+        refresh()
 
 
 def status_text(snapshot: LiveSnapshot) -> str:

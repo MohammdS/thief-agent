@@ -21,17 +21,19 @@ Git commits. A final series proposal confirms the canonical result artifact hash
    subgame, step, role, previous state, hidden action, scent heatmap, hint, truth/bluff
    intent, and nonce.
 2. `commit_turn` publishes only the SHA-256 hash and receives an acknowledgment.
-3. `reveal_turn` publishes the row-major scent heatmap and hint. It may also publish a
-   Police barrier or terminal claim, but it has no action or movement field.
+3. After both commitments exist, Thief publishes its row-major scent heatmap and hint.
+   Police then publishes its heatmap/hint plus any public barrier or terminal claim.
+   Neither live reveal contains an action or movement field.
 4. Duplicate identical messages are idempotent; conflicting duplicates fail visibly.
 5. `final_audit` discloses the complete action, heatmap, hint, intent, and nonce after play.
    Constant-time commitment comparison, immediate/final reveal matching, objective replay,
    and action-derived scent verification produce `Verified OK` or `TAMPERED`.
 
-The live Thief process advances only its own known position. It updates Police belief from
-the received heatmap and hint, and applies only public Police barriers. Exact Police actions
-are reconstructed after final audit. A terminal claim stops live play and is accepted only
-if the final hidden actions prove the claimed overlap, barrier capture, or imprisonment.
+The live Thief process advances only its own known position and applies public Police
+barriers. It may infer a unique Police emitter by testing the received heatmap against the
+complete locked scent transition. Exact Police actions are reconstructed after final
+audit. A terminal claim stops play and is accepted only if final disclosures prove the
+claimed overlap, barrier capture, or imprisonment.
 
 This contract deliberately resolves the assignment's `incoming hint + scent` strategy
 boundary in favor of location privacy. Contract `1.0`, which put `action` in

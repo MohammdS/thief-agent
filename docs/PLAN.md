@@ -1,6 +1,6 @@
 # Technical Plan
 
-The CLI and future GUI call only `ThiefSdk`. The SDK delegates to an orchestrator, which
+The CLI and GUI call only `ThiefSdk`. The SDK delegates to an orchestrator, which
 is the sole gateway to domain, strategy, language, protocol, reliability, persistence,
 replay, and reporting subsystems. No subsystem may bypass the orchestrator to mutate match
 state.

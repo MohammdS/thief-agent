@@ -9,6 +9,7 @@ from thief_agent.replay.models import ReplayFrame, ReplayResult
 from thief_agent.ui.evidence import render_live_png, render_replay_png
 from thief_agent.ui.live import controls_enabled, status_text
 from thief_agent.ui.model import LiveSnapshot, heat_color
+from thief_agent.ui.store import LiveSnapshotStore
 
 
 def snapshot() -> LiveSnapshot:
@@ -52,3 +53,13 @@ def test_headless_live_and_replay_evidence_are_valid_pngs(tmp_path: Path) -> Non
 def test_live_snapshot_rejects_impossible_local_truth() -> None:
     with pytest.raises(ValueError):
         LiveSnapshot(7, 7, Coord(3, 3), frozenset({Coord(3, 3)}), {}, {}, 0, "", 0, "", "", False)
+
+
+def test_live_snapshot_store_round_trips_without_objective_police(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "live.json"
+    store = LiveSnapshotStore(path)
+    store.write(snapshot())
+    assert store.read() == snapshot()
+    assert '"police"' not in path.read_text(encoding="utf-8")

@@ -24,6 +24,12 @@ def test_peer_command_starts_configured_server() -> None:
     )
 
 
+def test_gui_command_opens_local_truth_monitor() -> None:
+    with patch("thief_agent.cli.ThiefSdk.run_gui") as run_gui:
+        assert main(["gui", "--config", "game.json", "--state", "live.json"]) == 0
+    run_gui.assert_called_once_with(Path("game.json"), Path("live.json"))
+
+
 def test_validate_command_reports_config_hash(capsys: object) -> None:
     assert main(["validate"]) == 0
     output = json.loads(capsys.readouterr().out)  # type: ignore[attr-defined]

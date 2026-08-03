@@ -4,7 +4,7 @@ import pytest
 
 from thief_agent.config import load_shared_config
 from thief_agent.domain.outcome import TerminalReason, evaluate_outcome, score_outcome
-from thief_agent.domain.scent import advance_scent, emission
+from thief_agent.domain.scent import advance_scent, emission, infer_emitter
 from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Coord
 
@@ -36,6 +36,12 @@ def test_invalid_decay_is_rejected() -> None:
         advance_scent({}, Coord(0, 0), 7, 7, decay=1.1)
 
 
+def test_public_scent_transition_uniquely_locates_current_emitter() -> None:
+    previous = advance_scent({}, Coord(3, 3), 7, 7)
+    observed = advance_scent(previous, Coord(3, 4), 7, 7)
+    assert infer_emitter(previous, observed, 7, 7) == Coord(3, 4)
+
+
 def test_capture_imprisonment_and_survival_scores() -> None:
     config = game_config()
     captured = BoardState(7, 7, Coord(2, 2), Coord(2, 2))
@@ -54,4 +60,3 @@ def test_nonterminal_and_all_fixed_score_pairs() -> None:
     assert evaluate_outcome(state, config) is None
     assert score_outcome(TerminalReason.TIE, config).thief_score == 2
     assert score_outcome(TerminalReason.TECHNICAL_LOSS, config).police_score == 0
-

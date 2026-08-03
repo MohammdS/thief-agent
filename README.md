@@ -14,7 +14,7 @@ barrier handling, artifact generation, and tamper detection; it is **not evidenc
 rate against the companion Police agent**.
 
 Submission metadata is intentionally unresolved: the eight-character `GROUP_ID`, student
-identifiers, and companion Police URL must be supplied by the team. No counted match has
+identifiers, and public Police URLs must be supplied by the team. No counted match has
 been run, Gmail live delivery has not been authorized, and no submission tag has been
 created.
 
@@ -32,7 +32,8 @@ The interaction is treated as a two-agent, finite-horizon Dec-POMDP:
 - Thief actions are `N/S/E/W/STAY`; Police actions are movement or permanent barrier
   placement. Python validates all physical actions.
 - The Thief observation contains its position, public barriers, the observed 5x5 Police
-  scent field, grounded hints, protocol state, and a Bayesian Police-location belief. It
+  scent field, grounded hints, protocol state, and a Police-location belief inferred from
+  the complete public deterministic scent transition. It
   does not contain objective Police movement or position.
 - Physical transitions are deterministic once both legal actions are fixed. Observation
   uncertainty comes from partial sensing and non-binding truth/bluff language.
@@ -104,6 +105,16 @@ result hashes. It writes validated config/log/result artifacts under
 also requires `--declaration PATH` so the pre-agreed declaration is preserved. Public
 exposure and setup are documented in the [network runbook](docs/public-network-runbook.md).
 
+Run the local-truth GUI as a separate monitor while the peer is active:
+
+```powershell
+uv run thief-agent gui --config config/game.json `
+  --state artifacts/matches/runtime/live.json
+```
+
+The atomic snapshot contains local Thief truth, public barriers, received Police
+scent/hint, belief, token, network, and audit status—never objective Police position.
+
 ## Replay and reporting
 
 ```powershell
@@ -130,10 +141,10 @@ circuit breaker.
 The automated suite covers physical invariants, scent, scoring, schemas, two-process MCP,
 commit-reveal/tampering, Bayesian filtering, legal action selection, LLM fallback,
 reliability, Gmail mocks, GUI information boundaries, the symmetric autonomous runtime,
-replay, and the six-game harness.
-The qualification package is pinned to privacy-contract commit
-`b8da971b02499aaf34a626e5fdbca69ff29e8d96`; all six games terminated after 35 steps,
-all six replays verified, and a corruption probe returned `TAMPERED`. See
+replay, and the six-game harness. All qualification games terminated, all six replays
+verified, and a corruption probe returned `TAMPERED`. The real independent Police peer
+has also completed an uncounted localhost match with matching result hashes and verified
+replay on both sides. See
 [testing and evidence](docs/testing.md).
 
 ```powershell
@@ -152,8 +163,8 @@ analysis lives in `artifacts/analysis/` and `analysis/strategy_sensitivity.ipynb
 
 - Replace `GROUP_ID` in shared/local configuration and artifacts.
 - Add both student identifiers and the assigned group name.
-- Add the independently developed companion Police repository and public MCP URL.
-- Run uncounted interoperability tests, then a counted six-game series with the companion.
+- Publish the completed independent Police repository and configure public MCP URLs.
+- Run one counted six-game series against each of two different opponents.
 - Confirm the mutually agreed result before explicitly choosing live Gmail delivery.
 - Create `v1.0-submission` only after the final metadata and artifact audit.
 

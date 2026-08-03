@@ -5,11 +5,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from functools import partial
 
-from thief_agent.belief.model import point_belief, predict_belief, update_belief
+from thief_agent.belief.model import point_belief, predict_belief
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditRecord
-from thief_agent.domain.board import apply_move
-from thief_agent.domain.scent import ScentMap
+from thief_agent.domain.scent import ScentMap, infer_emitter
 from thief_agent.domain.types import Coord, Role
 from thief_agent.orchestrator import ThiefOrchestrator
 from thief_agent.protocol.actions import HintIntent
@@ -24,16 +23,15 @@ from thief_agent.runtime.exchange import (
     send_commit,
     send_reveal,
 )
-from thief_agent.runtime.live_state import (
-    apply_public_barrier,
-    initial_state,
-    require_in_bounds_heatmap,
-)
+from thief_agent.runtime.live_state import initial_state, require_in_bounds_heatmap
+from thief_agent.runtime.local_action import apply_thief_action
 from thief_agent.runtime.models import PeerGameRun
+from thief_agent.runtime.presentation import publish_live
 from thief_agent.runtime.state import audit_record, log_record, state_sha256
 from thief_agent.runtime.transport import PeerTransport
 from thief_agent.runtime.wait import wait_for_value
 from thief_agent.strategy.observation import ThiefObservation
+from thief_agent.ui.store import LiveSnapshotStore
 
 
 async def run_peer_game(
@@ -47,6 +45,7 @@ async def run_peer_game(
     git_commit: str,
     started_at: datetime,
     max_words: int,
+    publisher: LiveSnapshotStore | None = None,
 ) -> PeerGameRun:
     """Run simultaneous commitments, mutual reveals, and final audit."""
     state = initial_state(config)
@@ -93,17 +92,17 @@ async def run_peer_game(
             "reveal",
         )
         turn.transition(TurnState.VERIFYING)
-        state = apply_move(state, Role.THIEF, decision.move)
-        if police.barrier is not None:
-            target = Coord(police.barrier.row, police.barrier.col)
-            state = apply_public_barrier(state, target, config)
+        state = apply_thief_action(state, decision.move, police.barrier, config)
         state = state.after_full_turn()
         recent.append(state.thief)
-        police_scent = decode_scent(police.scent_heatmap)
-        require_in_bounds_heatmap(police_scent, state)
-        belief = update_belief(
-            predicted, police_scent, state.barriers, police.hint, 0.5,
+        observed_scent = decode_scent(police.scent_heatmap)
+        require_in_bounds_heatmap(observed_scent, state)
+        located_police = infer_emitter(
+            police_scent, observed_scent, state.width, state.height, config.scent.decay,
         )
+        police_scent = observed_scent
+        belief = point_belief(state.width, state.height, located_police)
+        publish_live(publisher, state, police_scent, belief, police.hint, tokens)
         turn.transition(TurnState.COMPLETE)
         if police.capture_claim is not None or state.step >= config.turns.survival_threshold:
             break
@@ -123,6 +122,7 @@ async def run_peer_game(
         ),
     )
     state, outcome = audited.state, audited.outcome
+    publish_live(publisher, state, police_scent, belief, "", tokens, "Verified OK")
     opponent = await exchange_subgame_result(
         config, subgame, state, outcome, tokens, service, client, gate, groups, git_commit,
     )

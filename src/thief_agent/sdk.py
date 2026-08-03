@@ -18,6 +18,7 @@ from thief_agent.reporting.gatekeeper import default_reporting_gatekeeper
 from thief_agent.reporting.gmail import DeliveryReceipt, GmailReporter
 from thief_agent.runtime.entrypoint import run_peer_runtime
 from thief_agent.runtime.models import PeerSeriesRun
+from thief_agent.ui.app import run_live_gui
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +103,10 @@ class ThiefSdk:
     ) -> PeerSeriesRun:
         """Run inbound MCP tools and the outbound autonomous series together."""
         return run(run_peer_runtime(local_path, shared_path, output, declaration_path))
+
+    def run_gui(self, config_path: Path, state_path: Path) -> None:
+        """Open the optional local-truth monitor for a running peer."""
+        run_live_gui(config_path, state_path)
 
     def deliver_result(
         self,

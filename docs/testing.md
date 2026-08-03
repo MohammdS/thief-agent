@@ -21,10 +21,9 @@ public server tools.
 an ephemeral loopback port. The real Thief orchestrator, strategy, commitment code,
 physical validators, belief update, artifact models, and replay verifier run unchanged.
 
-Evidence is locked to privacy-contract commit
-`b8da971b02499aaf34a626e5fdbca69ff29e8d96`. Across six uncounted games:
+Across six uncounted games:
 
-- every game terminated at the 35-step survival threshold;
+- every game terminated at or before the 35-step threshold;
 - the Police stub placed five permanent barriers per game;
 - every saved replay returned `Verified OK`;
 - a deliberately changed committed hint returned `TAMPERED`;
@@ -50,6 +49,6 @@ does not establish win rate.
 
 ## Unverified external boundaries
 
-No counted series against the companion repository is included. Gmail live send is tested
+No counted series against two different opponents is included. Gmail live send is tested
 only through a mocked API service; no course email was sent. Public tunnel instructions are
 documented but a persistent tunnel URL is deliberately not committed.

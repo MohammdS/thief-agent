@@ -3,35 +3,35 @@
     "capture_risk_weight": 20,
     "chosen_move": "E",
     "chosen_risk": 0.3,
-    "chosen_total": 12.95,
-    "margin_to_second": 17.5
+    "chosen_total": 15.25,
+    "margin_to_second": 15.3
   },
   {
     "capture_risk_weight": 35,
     "chosen_move": "E",
     "chosen_risk": 0.3,
-    "chosen_total": 8.45,
-    "margin_to_second": 23.5
+    "chosen_total": 10.75,
+    "margin_to_second": 25.8
   },
   {
     "capture_risk_weight": 50,
     "chosen_move": "E",
     "chosen_risk": 0.3,
-    "chosen_total": 3.95,
-    "margin_to_second": 29.5
+    "chosen_total": 6.25,
+    "margin_to_second": 36.3
   },
   {
     "capture_risk_weight": 65,
     "chosen_move": "E",
     "chosen_risk": 0.3,
-    "chosen_total": -0.55,
-    "margin_to_second": 35.5
+    "chosen_total": 1.75,
+    "margin_to_second": 43.5
   },
   {
     "capture_risk_weight": 80,
     "chosen_move": "E",
     "chosen_risk": 0.3,
-    "chosen_total": -5.05,
-    "margin_to_second": 41.5
+    "chosen_total": -2.75,
+    "margin_to_second": 49.5
   }
 ]

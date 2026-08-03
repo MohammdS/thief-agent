@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from math import isclose
 
 from thief_agent.domain.types import Coord
 
@@ -45,3 +46,29 @@ def advance_scent(
         if 0 <= cell.row < height and 0 <= cell.col < width
     }
 
+
+def infer_emitter(
+    previous: Mapping[Coord, float], observed: Mapping[Coord, float],
+    width: int, height: int, decay: float = 0.10,
+    blocked: frozenset[Coord] = frozenset(),
+) -> Coord:
+    """Invert the public deterministic scent transition to one unique cell."""
+    candidates = (
+        Coord(row, col) for row in range(height) for col in range(width)
+        if Coord(row, col) not in blocked
+    )
+    matches = tuple(
+        cell for cell in candidates
+        if same_scent(advance_scent(previous, cell, width, height, decay), observed)
+    )
+    if len(matches) != 1:
+        raise ValueError(f"scent transition has {len(matches)} feasible emitters")
+    return matches[0]
+
+
+def same_scent(left: Mapping[Coord, float], right: Mapping[Coord, float]) -> bool:
+    """Compare canonical heatmaps with a tight wire-roundtrip tolerance."""
+    return left.keys() == right.keys() and all(
+        isclose(value, right[cell], rel_tol=0.0, abs_tol=1e-9)
+        for cell, value in left.items()
+    )

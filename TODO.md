@@ -4,7 +4,7 @@
 
 - [ ] Replace `GROUP_ID` with the assigned eight-character group ID.
 - [ ] Add both student identifiers.
-- [ ] Add the companion Police repository URL.
+- [ ] Add the completed companion Police repository and public endpoint URLs.
 
 ## Milestones
 
@@ -17,8 +17,9 @@
 - [x] Implement GUI and verified replay.
 - [x] Complete uncounted qualification evidence and release documentation.
 
-The deterministic Police stub proves the local pipeline only. Companion interoperability,
-counted play, and final submission metadata remain required before release tagging.
+The deterministic Police stub proves the local pipeline only. Uncounted companion
+interoperability is complete; counted play against two opponents and final metadata remain
+required before release tagging.
 
 Definition of done: the implementation passes clean-install, lint, strict typing,
 branch-aware coverage, schema, security, line-limit, replay, and six-subgame gates.

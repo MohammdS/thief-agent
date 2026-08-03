@@ -19,6 +19,7 @@ from thief_agent.runtime.negotiation import negotiate_series
 from thief_agent.runtime.package import build_live_log, build_live_result, ordered_groups
 from thief_agent.runtime.result_exchange import agree_series_result
 from thief_agent.runtime.transport import PeerTransport
+from thief_agent.ui.store import LiveSnapshotStore
 
 
 class PeerSeriesRunner:
@@ -81,6 +82,10 @@ class PeerSeriesRunner:
             store.write("declaration", self.config.game_id, declaration)
         machine.transition(MatchState.RUNNING_SUBGAME)
         groups = (self.local.identity.group_id, self.local.peer.opponent_group_id)
+        publisher = (
+            LiveSnapshotStore(self.output / "runtime" / "live.json")
+            if self.local.ui.enabled else None
+        )
         games = []
         for subgame in range(1, self.config.series.subgames + 1):
             orchestrator = build_orchestrator(self.config, self.local, self.output, subgame)
@@ -92,6 +97,7 @@ class PeerSeriesRunner:
                 self.config, subgame, self.service, self.client, orchestrator,
                 self.gate, groups, self.git_commit, start,
                 self.local.strategy.hint_word_limit,
+                publisher,
             )
             games.append(game)
             agreed = build_agreed_config(

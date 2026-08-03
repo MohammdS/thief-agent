@@ -15,17 +15,17 @@ and watchdog heartbeat. Network handlers delegate strict validation and idempote
 
 ## Turn data flow
 
-1. Bayesian filtering combines the prior Police belief with the current scent and
-   previously audited linguistic evidence.
+1. The prior Police belief is predicted over legal moves; after reveal, the complete
+   deterministic public scent transition is inverted to a unique legal emitter.
 2. `EvasionStrategy` evaluates all legal moves and selects one deterministically.
 3. `HintPolicy` chooses a bounded template or requests grounded Ollama language. Provider
    failure always returns a valid template candidate.
 4. `seal_turn` binds the hidden action, published scent heatmap, hint, truth/bluff intent,
    prior state, and a fresh 256-bit nonce into a SHA-256 commitment.
 5. The checkpoint is atomically persisted before publication.
-6. FastMCP carries commitment first, then scent heatmap plus hint; action, nonce, and intent
-   remain secret until final audit. Police barriers remain public because they change legal
-   movement immediately.
+6. Both peers commit before reveal. Thief reveals first; Police then reveals scent, hint,
+   public barrier, and any evidence-backed claim. Actions, nonces, and intent remain secret
+   until final audit. Ordered reveal cannot alter already-committed actions.
 7. Final disclosures reconstruct the objective board, verify every published heatmap from
    the hidden action history, calculate results, and compare result hashes.
 

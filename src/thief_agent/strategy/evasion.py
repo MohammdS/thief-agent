@@ -31,12 +31,12 @@ class MoveEvaluation:
 class EvasionWeights:
     """Configure the interpretable terms of the movement heuristic."""
 
-    capture_risk: float = 50.0
-    belief_distance: float = 2.0
+    capture_risk: float = 35.0
+    belief_distance: float = 1.0
     reachable_area: float = 0.15
-    mobility: float = 1.5
-    next_escape: float = 4.0
-    dead_end: float = 3.0
+    mobility: float = 3.0
+    next_escape: float = 2.0
+    dead_end: float = 6.0
     revisit: float = 1.5
 
 
