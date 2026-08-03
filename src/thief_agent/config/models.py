@@ -124,7 +124,7 @@ class SharedConfig(StrictModel):
     schema_version: Literal["1.0"]
     game_id: str = Field(min_length=1)
     counted: bool
-    group_id: str = Field(min_length=1)
+    agreed_between: tuple[str, str]
     board: BoardConfig
     barriers: BarrierConfig
     turns: TurnConfig
@@ -135,7 +135,11 @@ class SharedConfig(StrictModel):
 
     @model_validator(mode="after")
     def validate_counted_series(self) -> SharedConfig:
-        """Require exactly six subgames whenever a series is counted."""
+        """Require distinct peers and exactly six counted subgames."""
+        if any(not group.strip() for group in self.agreed_between):
+            raise ValueError("agreed group IDs must be non-empty")
+        if len(set(self.agreed_between)) != 2:
+            raise ValueError("agreed_between must contain two distinct group IDs")
         if self.counted and self.series.subgames != 6:
             raise ValueError("counted series must contain exactly six subgames")
         return self

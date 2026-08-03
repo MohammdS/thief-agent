@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from functools import partial
 
-from thief_agent.belief.model import uniform_belief, update_belief
+from thief_agent.belief.model import point_belief, predict_belief, update_belief
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditRecord
 from thief_agent.domain.board import apply_move
@@ -50,7 +50,7 @@ async def run_peer_game(
 ) -> PeerGameRun:
     """Run simultaneous commitments, mutual reveals, and final audit."""
     state = initial_state(config)
-    belief = uniform_belief(state.width, state.height)
+    belief = point_belief(state.width, state.height, state.police)
     own_scent: ScentMap = {}
     police_scent: ScentMap = {}
     own_audits: list[AuditRecord] = []
@@ -60,9 +60,10 @@ async def run_peer_game(
         turn = turn_machine()
         turn.transition(TurnState.COMPUTING_MOVE)
         prior_hash = state_sha256(state)
+        predicted = predict_belief(belief, state.barriers)
         observation = ThiefObservation(
             state.width, state.height, state.thief, state.barriers,
-            police_scent, belief.probabilities, step, tuple(recent[-4:]),
+            police_scent, predicted.probabilities, step, tuple(recent[-4:]),
         )
         decision = await orchestrator.decide_turn(
             observation, config.game_id, subgame, prior_hash,
@@ -100,7 +101,9 @@ async def run_peer_game(
         recent.append(state.thief)
         police_scent = decode_scent(police.scent_heatmap)
         require_in_bounds_heatmap(police_scent, state)
-        belief = update_belief(belief, police_scent, state.barriers, police.hint, 0.5)
+        belief = update_belief(
+            predicted, police_scent, state.barriers, police.hint, 0.5,
+        )
         turn.transition(TurnState.COMPLETE)
         if police.capture_claim is not None or state.step >= config.turns.survival_threshold:
             break

@@ -45,6 +45,29 @@ def uniform_belief(width: int, height: int, blocked: frozenset[Coord] = frozense
     return BeliefMap(width, height, {cell: probability for cell in cells})
 
 
+def point_belief(width: int, height: int, cell: Coord) -> BeliefMap:
+    """Create the public pre-game certainty at an agreed start cell."""
+    if not (0 <= cell.row < height and 0 <= cell.col < width):
+        raise ValueError("belief point must lie inside the board")
+    return BeliefMap(width, height, {cell: 1.0})
+
+
+def predict_belief(prior: BeliefMap, blocked: frozenset[Coord]) -> BeliefMap:
+    """Propagate probability through one unknown legal N/S/E/W/STAY action."""
+    predicted: dict[Coord, float] = {}
+    for cell, probability in prior.probabilities.items():
+        candidates = tuple(
+            target for row_delta, col_delta in ((-1, 0), (0, 1), (1, 0), (0, -1), (0, 0))
+            if 0 <= (target := Coord(cell.row + row_delta, cell.col + col_delta)).row < prior.height
+            and 0 <= target.col < prior.width
+            and target not in blocked
+        )
+        share = probability / len(candidates)
+        for target in candidates:
+            predicted[target] = predicted.get(target, 0.0) + share
+    return normalize(prior.width, prior.height, predicted, blocked)
+
+
 def update_belief(
     prior: BeliefMap,
     scent: Mapping[Coord, float],
@@ -105,4 +128,3 @@ def normalize(
     if total <= 0:
         return uniform_belief(width, height, blocked)
     return BeliefMap(width, height, {cell: value / total for cell, value in weights.items()})
-

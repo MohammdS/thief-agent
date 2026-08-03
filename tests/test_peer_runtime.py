@@ -20,11 +20,11 @@ async def test_autonomous_peer_runs_mutual_commit_reveal_series(tmp_path: Path) 
     })
     local = load_local_config(Path("config/game.toml.example"))
     local = local.model_copy(update={
-        "identity": local.identity.model_copy(update={"group_id": config.group_id}),
-        "peer": local.peer.model_copy(update={"opponent_group_id": "ZZZZZZZZ"}),
+        "identity": local.identity.model_copy(update={"group_id": "THIEF_GROUP_ID"}),
+        "peer": local.peer.model_copy(update={"opponent_group_id": "POLICE_GROUP_ID"}),
     })
     service = ProtocolService(config.game_id, config_sha256(config))
-    police = FakePoliceTransport(config, service, "ZZZZZZZZ")
+    police = FakePoliceTransport(config, service, "POLICE_GROUP_ID")
     run = await PeerSeriesRunner(
         config, local, service, police, tmp_path, "a" * 40,
     ).run()

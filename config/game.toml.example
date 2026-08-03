@@ -1,13 +1,13 @@
 [identity]
 team_name = "REPLACE_ME"
-group_id = "GROUP_ID"
+group_id = "THIEF_GROUP_ID"
 role = "thief"
 
 [peer]
 host = "127.0.0.1"
 port = 8002
 opponent_mcp_url = "https://REPLACE_ME/mcp"
-opponent_group_id = "OPPONENT_GROUP_ID"
+opponent_group_id = "POLICE_GROUP_ID"
 
 [strategy]
 seed = 42

@@ -49,8 +49,12 @@ class PeerSeriesRunner:
 
     async def run(self) -> PeerSeriesRun:
         """Run negotiation, all subgames, mutual result agreement, and persistence."""
-        if self.local.identity.group_id != self.config.group_id:
-            raise ValueError("local and shared group IDs differ")
+        configured_groups = {
+            self.local.identity.group_id,
+            self.local.peer.opponent_group_id,
+        }
+        if configured_groups != set(self.config.agreed_between):
+            raise ValueError("local peer identities do not match agreed_between")
         if self.config.counted and self.declaration_path is None:
             raise ValueError("counted series requires an agreed declaration")
         machine = match_machine()

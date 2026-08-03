@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "game_id": "UNCOUNTED-DEVELOPMENT",
   "counted": false,
-  "group_id": "GROUP_ID",
+  "agreed_between": ["POLICE_GROUP_ID", "THIEF_GROUP_ID"],
   "board": {
     "width": 7,
     "height": 7,
@@ -31,4 +31,3 @@
     "watchdog_seconds": 60
   }
 }
-
