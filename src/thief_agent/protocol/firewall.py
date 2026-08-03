@@ -1,32 +1,33 @@
-"""Prevent objective movement reveals from reaching strategy or live GUI."""
+"""Expose only assignment-authorized live evidence to strategy and GUI."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from thief_agent.protocol.actions import TurnAction
+from thief_agent.config.models import PointConfig
 from thief_agent.protocol.messages import RevealTurnRequest
+from thief_agent.protocol.scent import ScentCell
 
 
 @dataclass(frozen=True, slots=True)
-class HintEvidence:
-    """Expose only natural-language evidence to live decision code."""
+class ObservationEvidence:
+    """Expose scent, language, and public events without objective movement."""
 
     hint: str
+    scent_heatmap: tuple[ScentCell, ...]
+    barrier: PointConfig | None
+    capture_claim: str | None
 
 
 @dataclass(slots=True)
 class AuditFirewall:
-    """Route objective action data only to the private audit sink."""
+    """Accept only a reveal schema that contains no opponent action field."""
 
-    _audit_actions: list[TurnAction] = field(default_factory=list)
-
-    def accept_police_reveal(self, request: RevealTurnRequest) -> HintEvidence:
-        """Store the action for audit while returning hint-only evidence."""
-        self._audit_actions.append(request.action)
-        return HintEvidence(hint=request.hint)
-
-    def actions_for_final_audit(self) -> tuple[TurnAction, ...]:
-        """Return an immutable audit view unavailable to strategy interfaces."""
-        return tuple(self._audit_actions)
-
+    def accept_police_reveal(self, request: RevealTurnRequest) -> ObservationEvidence:
+        """Return the complete safe live observation and no physical movement."""
+        return ObservationEvidence(
+            request.hint,
+            request.scent_heatmap,
+            request.barrier,
+            request.capture_claim,
+        )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from typing import Literal
 
 from thief_agent.artifacts.match_log import LogRecord
 from thief_agent.config.loader import canonical_json_bytes
@@ -27,13 +28,19 @@ def state_sha256(state: BoardState) -> str:
     return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
 
 
-def audit_record(sealed: SealedTurn) -> AuditRecord:
+def audit_record(
+    sealed: SealedTurn,
+    capture_claim: Literal["overlap", "barrier", "imprisonment"] | None = None,
+) -> AuditRecord:
     """Pair an immediate public reveal with its final disclosure."""
+    action = sealed.disclosure.action
     return AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
-            action=sealed.disclosure.action,
+            scent_heatmap=sealed.disclosure.scent_heatmap,
             hint=sealed.disclosure.hint,
+            barrier=action.barrier if action.kind.value == "barrier" else None,
+            capture_claim=capture_claim,
         ),
         disclosure=sealed.disclosure,
     )

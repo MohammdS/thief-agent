@@ -9,9 +9,11 @@ from thief_agent.artifacts.match_log import MatchLogArtifact, log_sha256
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.commit_reveal import TurnDisclosure, verify_commitment
 from thief_agent.domain.board import apply_move, place_barrier
+from thief_agent.domain.scent import ScentMap, advance_scent
 from thief_agent.domain.state import BoardState
-from thief_agent.domain.types import Coord
+from thief_agent.domain.types import Coord, Role
 from thief_agent.protocol.actions import ActionKind
+from thief_agent.protocol.scent import encode_scent
 from thief_agent.replay.models import ReplayFrame, ReplayResult
 
 
@@ -32,6 +34,7 @@ class ReplayVerifier:
         )
         failures: list[str] = []
         frames: list[ReplayFrame] = []
+        scents: dict[Role, ScentMap] = {Role.THIEF: {}, Role.POLICE: {}}
         if not log.mutual_agreement.confirmed:
             failures.append("log mutual agreement is not confirmed")
         elif not hmac.compare_digest(log.mutual_agreement.sha256, log_sha256(log)):
@@ -45,6 +48,16 @@ class ReplayVerifier:
                 if not verify_commitment(record.commit, disclosure):
                     raise ValueError("commitment mismatch")
                 board = apply_disclosure(board, disclosure, self._config.barriers.police_capacity)
+                role = disclosure.role
+                scents[role] = advance_scent(
+                    scents[role],
+                    board.position(role),
+                    board.width,
+                    board.height,
+                    self._config.scent.decay,
+                )
+                if disclosure.scent_heatmap != encode_scent(scents[role]):
+                    raise ValueError("scent heatmap does not match hidden action history")
                 board = replace(board, step=max(board.step, disclosure.step))
                 frames.append(ReplayFrame(
                     disclosure.step, board, disclosure.hint, record.commit,

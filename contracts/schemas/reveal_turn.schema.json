@@ -1,26 +1,5 @@
 {
   "$defs": {
-    "ActionKind": {
-      "description": "Distinguish a movement turn from Police barrier placement.",
-      "enum": [
-        "move",
-        "barrier"
-      ],
-      "title": "ActionKind",
-      "type": "string"
-    },
-    "Move": {
-      "description": "Enumerate the fixed physical action alphabet.",
-      "enum": [
-        "N",
-        "S",
-        "E",
-        "W",
-        "STAY"
-      ],
-      "title": "Move",
-      "type": "string"
-    },
     "PointConfig": {
       "additionalProperties": false,
       "description": "Represent a configured zero-based board coordinate.",
@@ -52,40 +31,32 @@
       "title": "Role",
       "type": "string"
     },
-    "TurnAction": {
+    "ScentCell": {
       "additionalProperties": false,
-      "description": "Represent exactly one physical turn action.",
+      "description": "Publish one global board cell intensity without an agent position field.",
       "properties": {
-        "barrier": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PointConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+        "col": {
+          "minimum": 0,
+          "title": "Col",
+          "type": "integer"
         },
-        "kind": {
-          "$ref": "#/$defs/ActionKind"
+        "intensity": {
+          "minimum": 0,
+          "title": "Intensity",
+          "type": "number"
         },
-        "move": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Move"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+        "row": {
+          "minimum": 0,
+          "title": "Row",
+          "type": "integer"
         }
       },
       "required": [
-        "kind"
+        "row",
+        "col",
+        "intensity"
       ],
-      "title": "TurnAction",
+      "title": "ScentCell",
       "type": "object"
     },
     "WireEnvelope": {
@@ -158,10 +129,35 @@
     }
   },
   "additionalProperties": false,
-  "description": "Reveal action and hint while withholding nonce and intent.",
+  "description": "Reveal observable scent and hint while withholding the physical action.",
   "properties": {
-    "action": {
-      "$ref": "#/$defs/TurnAction"
+    "barrier": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PointConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "capture_claim": {
+      "anyOf": [
+        {
+          "enum": [
+            "overlap",
+            "barrier",
+            "imprisonment"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Capture Claim"
     },
     "envelope": {
       "$ref": "#/$defs/WireEnvelope"
@@ -170,11 +166,19 @@
       "maxLength": 500,
       "title": "Hint",
       "type": "string"
+    },
+    "scent_heatmap": {
+      "items": {
+        "$ref": "#/$defs/ScentCell"
+      },
+      "minItems": 1,
+      "title": "Scent Heatmap",
+      "type": "array"
     }
   },
   "required": [
     "envelope",
-    "action",
+    "scent_heatmap",
     "hint"
   ],
   "title": "RevealTurnRequest",

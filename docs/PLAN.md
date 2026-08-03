@@ -8,7 +8,7 @@ state.
 The peer is simultaneously a FastMCP HTTP server and bounded FastMCP client. All payloads
 use strict versioned schemas. A protocol state machine and cryptographic turn state machine
 reject illegal ordering. The strategy receives local truth, opponent scent, public barrier
-declarations, and processed verbal evidence, but never revealed objective Police movement.
+declarations, and processed verbal evidence. Protocol `1.1` also prevents the remote peer
+process from receiving objective movement before final audit.
 
 See the root [PLAN.md](../PLAN.md) for milestone gates.
-

@@ -69,7 +69,7 @@ async def exercise_turn_contract(port: int) -> None:
     client = PeerClient(f"http://127.0.0.1:{port}/mcp", timeout_seconds=2)
     negotiation = NegotiationRequest(
         envelope=envelope(step=0, subgame=0),
-        contract_version="1.0",
+        contract_version="1.1",
         counted=False,
         subgames=1,
         sender_group_id="police-group",
@@ -83,12 +83,14 @@ async def exercise_turn_contract(port: int) -> None:
     ))).accepted
     disclosure = sealed.disclosure
     assert (await client.reveal_turn(RevealTurnRequest(
-        envelope=envelope(), action=disclosure.action, hint=disclosure.hint,
+        envelope=envelope(),
+        scent_heatmap=disclosure.scent_heatmap,
+        hint=disclosure.hint,
     ))).accepted
     record = AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
-            action=disclosure.action,
+            scent_heatmap=disclosure.scent_heatmap,
             hint=disclosure.hint,
         ),
         disclosure=disclosure,

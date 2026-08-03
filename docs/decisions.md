@@ -10,7 +10,8 @@ exceed `0.9`; the contract vectors make this choice visible to the Police implem
 
 ## ADR-002 - Information firewall
 
-Objective positions are accepted only by physical validation, append-only logging, and
-post-match replay. Strategy and the live GUI receive a separate local observation type.
-This resolves the assignment conflict between reveal validation and partial observability.
-
+Protocol `1.0` exposed an action in every live reveal and relied on an internal firewall.
+That still allowed the remote process to reconstruct exact positions from known starts.
+Protocol `1.1` removes actions from the live wire schema: peers exchange only scent,
+language, public barriers, and terminal claims. Hidden actions are disclosed after the
+subgame, when objective replay verifies action legality, scent history, claims, and scores.

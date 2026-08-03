@@ -2,11 +2,17 @@ from datetime import UTC, datetime
 
 import pytest
 
-from tests.protocol_helpers import CONFIG_HASH, GAME_ID, commit_request, envelope, material
+from tests.protocol_helpers import (
+    CONFIG_HASH,
+    GAME_ID,
+    commit_request,
+    envelope,
+    material,
+    reveal_request,
+)
 from thief_agent.crypto.audit import AuditRecord, FinalAuditRequest, RevealedTurn
 from thief_agent.crypto.commit_reveal import seal_turn
-from thief_agent.domain.types import Move
-from thief_agent.protocol.firewall import HintEvidence
+from thief_agent.protocol.firewall import ObservationEvidence
 from thief_agent.protocol.messages import (
     HealthRequest,
     NegotiationRequest,
@@ -24,7 +30,7 @@ def test_health_and_negotiation_validate_identity_and_counted_rule() -> None:
     assert peer.health(HealthRequest(envelope=envelope())).role == "thief"
     rejected = peer.negotiate(
         NegotiationRequest(
-            envelope=envelope(), contract_version="1.0", counted=True, subgames=1,
+            envelope=envelope(), contract_version="1.1", counted=True, subgames=1,
             sender_group_id="other-group", game_uid="game-uid",
             series_started_at=datetime.now(UTC),
         )
@@ -44,21 +50,25 @@ def test_commit_and_reveal_are_idempotent_but_conflicts_fail() -> None:
     with pytest.raises(ValueError, match="conflicting commitment"):
         peer.commit_turn(commit_request("c" * 64))
     reveal = RevealTurnRequest(
-        envelope=envelope(), action=sealed.disclosure.action, hint=sealed.disclosure.hint,
+        envelope=envelope(),
+        scent_heatmap=sealed.disclosure.scent_heatmap,
+        hint=sealed.disclosure.hint,
     )
     assert peer.reveal_turn(reveal).detail == "revealed"
     assert peer.reveal_turn(reveal).detail == "duplicate reveal"
-    assert len(peer.firewall.actions_for_final_audit()) == 1
+    assert "action" not in reveal.model_dump()
 
 
 def test_reveal_before_commit_fails_and_firewall_returns_hint_only() -> None:
     peer = service()
-    reveal = RevealTurnRequest(envelope=envelope(), action=material().action, hint="words only")
+    reveal = reveal_request(hint="words only")
     with pytest.raises(ValueError, match="before commitment"):
         peer.reveal_turn(reveal)
     evidence = peer.firewall.accept_police_reveal(reveal)
-    assert evidence == HintEvidence("words only")
-    assert tuple(HintEvidence.__dataclass_fields__) == ("hint",)
+    assert evidence == ObservationEvidence(
+        "words only", reveal.scent_heatmap, None, None,
+    )
+    assert "action" not in ObservationEvidence.__dataclass_fields__
 
 
 def test_service_final_audit_verifies_complete_record() -> None:
@@ -66,13 +76,15 @@ def test_service_final_audit_verifies_complete_record() -> None:
     sealed = seal_turn(material(), "01" * 32)
     peer.commit_turn(commit_request(sealed.commitment))
     reveal_request = RevealTurnRequest(
-        envelope=envelope(), action=sealed.disclosure.action, hint=sealed.disclosure.hint,
+        envelope=envelope(),
+        scent_heatmap=sealed.disclosure.scent_heatmap,
+        hint=sealed.disclosure.hint,
     )
     peer.reveal_turn(reveal_request)
     record = AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
-            action=sealed.disclosure.action,
+            scent_heatmap=sealed.disclosure.scent_heatmap,
             hint=sealed.disclosure.hint,
         ),
         disclosure=sealed.disclosure,
@@ -86,12 +98,8 @@ def test_conflicting_reveal_fails() -> None:
     peer = service()
     sealed = seal_turn(material(), "01" * 32)
     peer.commit_turn(commit_request(sealed.commitment))
-    first = RevealTurnRequest(envelope=envelope(), action=material().action, hint="first")
+    first = reveal_request(hint="first")
     peer.reveal_turn(first)
-    changed = RevealTurnRequest(
-        envelope=envelope(),
-        action=material().action.model_copy(update={"move": Move.NORTH}),
-        hint="first",
-    )
+    changed = reveal_request(intensity=0.8, hint="first")
     with pytest.raises(ValueError, match="conflicting reveal"):
         peer.reveal_turn(changed)

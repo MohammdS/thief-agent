@@ -12,7 +12,7 @@ from thief_agent.protocol.envelope import make_envelope
 from thief_agent.protocol.messages import HealthRequest, NegotiationRequest
 from thief_agent.protocol.service import ProtocolService
 from thief_agent.reliability.gatekeeper import ExternalGatekeeper
-from thief_agent.runtime.game import initial_state
+from thief_agent.runtime.live_state import initial_state
 from thief_agent.runtime.state import request_lifetime, state_sha256
 from thief_agent.runtime.transport import PeerTransport
 from thief_agent.runtime.wait import wait_for_value
@@ -73,7 +73,7 @@ def request(
             config.game_id, config_sha256(config), state_hash,
             sender=Role.THIEF, lifetime_seconds=request_lifetime(config),
         ),
-        contract_version="1.0",
+        contract_version="1.1",
         counted=config.counted,
         subgames=config.series.subgames,
         sender_group_id=group_id,

@@ -7,13 +7,14 @@ import hmac
 import secrets
 from dataclasses import dataclass
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from thief_agent.config.loader import canonical_json_bytes
 from thief_agent.config.models import StrictModel
 from thief_agent.domain.types import Role
 from thief_agent.protocol.actions import HintIntent, TurnAction
 from thief_agent.protocol.envelope import HASH_PATTERN
+from thief_agent.protocol.scent import ScentHeatmap, validate_heatmap
 
 
 class TurnMaterial(StrictModel):
@@ -25,8 +26,11 @@ class TurnMaterial(StrictModel):
     role: Role
     prior_state_sha256: str = Field(pattern=HASH_PATTERN)
     action: TurnAction
+    scent_heatmap: ScentHeatmap
     hint: str = Field(max_length=500)
     intent: HintIntent
+
+    _canonical_heatmap = field_validator("scent_heatmap")(validate_heatmap)
 
 
 class TurnDisclosure(TurnMaterial):
@@ -61,4 +65,3 @@ def seal_turn(material: TurnMaterial, nonce: str | None = None) -> SealedTurn:
 def verify_commitment(commitment: str, disclosure: TurnDisclosure) -> bool:
     """Compare a recomputed commitment in constant time."""
     return hmac.compare_digest(commitment, commitment_for(disclosure))
-

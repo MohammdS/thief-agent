@@ -8,10 +8,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from thief_agent.config.models import StrictModel
+from thief_agent.config.models import PointConfig, StrictModel
 from thief_agent.domain.types import Role
-from thief_agent.protocol.actions import TurnAction
 from thief_agent.protocol.envelope import HASH_PATTERN, WireEnvelope
+from thief_agent.protocol.scent import ScentHeatmap, validate_heatmap
 
 
 class HealthRequest(StrictModel):
@@ -25,7 +25,7 @@ class HealthResponse(StrictModel):
 
     status: Literal["ok"] = "ok"
     role: Role = Role.THIEF
-    protocol_version: Literal["1.0"] = "1.0"
+    protocol_version: Literal["1.1"] = "1.1"
     config_sha256: str = Field(pattern=HASH_PATTERN)
 
 
@@ -33,7 +33,7 @@ class NegotiationRequest(StrictModel):
     """Propose the locked contract and series parameters."""
 
     envelope: WireEnvelope
-    contract_version: Literal["1.0"]
+    contract_version: Literal["1.1"]
     counted: bool
     subgames: int = Field(ge=1)
     sender_group_id: str = Field(min_length=1)
@@ -65,11 +65,15 @@ class CommitTurnRequest(StrictModel):
 
 
 class RevealTurnRequest(StrictModel):
-    """Reveal action and hint while withholding nonce and intent."""
+    """Reveal observable scent and hint while withholding the physical action."""
 
     envelope: WireEnvelope
-    action: TurnAction
+    scent_heatmap: ScentHeatmap
     hint: str = Field(max_length=500)
+    barrier: PointConfig | None = None
+    capture_claim: Literal["overlap", "barrier", "imprisonment"] | None = None
+
+    _canonical_heatmap = field_validator("scent_heatmap")(validate_heatmap)
 
 
 class CaptureClaimRequest(StrictModel):

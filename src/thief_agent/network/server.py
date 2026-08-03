@@ -41,7 +41,7 @@ def build_server(service: ProtocolService) -> FastMCP:
 
     @server.tool
     def reveal_turn(request: RevealTurnRequest) -> Ack:
-        """Accept action and hint without nonce or intent."""
+        """Accept scent and hint without action, nonce, or intent."""
         return service.reveal_turn(request)
 
     @server.tool
@@ -77,4 +77,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -5,6 +5,7 @@ from thief_agent.crypto.audit import AuditRecord, RevealedTurn, verify_audit
 from thief_agent.crypto.commit_reveal import TurnDisclosure, seal_turn, verify_commitment
 from thief_agent.crypto.step_zero import StepZeroDeclaration, sign_step_zero, verify_step_zero
 from thief_agent.domain.types import Move, Role
+from thief_agent.protocol.scent import ScentCell
 
 FIXED_NONCE = "01" * 32
 
@@ -16,12 +17,16 @@ def test_commitment_is_stable_for_fixed_nonce_and_fresh_by_default() -> None:
     assert seal_turn(material()).commitment != seal_turn(material()).commitment
 
 
-@pytest.mark.parametrize("field", ["action", "hint", "intent", "prior_state_sha256", "nonce"])
+@pytest.mark.parametrize(
+    "field",
+    ["action", "scent_heatmap", "hint", "intent", "prior_state_sha256", "nonce"],
+)
 def test_every_bound_field_detects_tampering(field: str) -> None:
     sealed = seal_turn(material(), FIXED_NONCE)
     values = sealed.disclosure.model_dump(mode="python")
     replacements = {
         "action": action(Move.NORTH),
+        "scent_heatmap": (ScentCell(row=0, col=0, intensity=0.8),),
         "hint": "altered hint",
         "intent": "bluff",
         "prior_state_sha256": "c" * 64,
@@ -36,7 +41,7 @@ def test_final_audit_checks_hash_action_and_hint() -> None:
     sealed = seal_turn(material(), FIXED_NONCE)
     reveal = RevealedTurn(
         commitment=sealed.commitment,
-        action=sealed.disclosure.action,
+        scent_heatmap=sealed.disclosure.scent_heatmap,
         hint=sealed.disclosure.hint,
     )
     record = AuditRecord(reveal=reveal, disclosure=sealed.disclosure)

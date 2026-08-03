@@ -9,9 +9,11 @@ deterministic; its strict fallback path is covered with mocked provider failures
 
 `test_peer_runtime.py` drives the complete autonomous Thief loop through a reciprocal
 Police transport: health, coordinator negotiation, 35 simultaneous commit/reveal steps,
-final nonce audits, subgame digest agreement, final artifact hash agreement, persistence,
-and verified replay. A separate-process FastMCP test exercises all six outbound client
-operations against the public server tools.
+scent-only live reveals, final action/nonce audits, action-derived heatmap verification,
+subgame digest agreement, final artifact hash agreement, persistence, and verified replay.
+Privacy tests reject live `action`/`move` fields and non-canonical heatmaps. A
+separate-process FastMCP test exercises all six outbound client operations against the
+public server tools.
 
 ## Six-game qualification
 

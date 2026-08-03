@@ -10,8 +10,10 @@ from fastmcp import FastMCP
 from thief_agent.config.models import PointConfig
 from thief_agent.crypto.commit_reveal import TurnMaterial, seal_turn
 from thief_agent.domain.board import destination
+from thief_agent.domain.scent import ScentMap, advance_scent
 from thief_agent.domain.types import Coord, Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
+from thief_agent.protocol.scent import encode_scent
 from thief_agent.qualification.models import StubTurnRequest, StubTurnResponse
 
 
@@ -19,6 +21,7 @@ from thief_agent.qualification.models import StubTurnRequest, StubTurnResponse
 class StubState:
     position: Coord = field(default_factory=lambda: Coord(0, 0))
     barriers: set[Coord] = field(default_factory=set)
+    scent: ScentMap = field(default_factory=dict)
 
 
 def build_stub() -> FastMCP:
@@ -37,6 +40,7 @@ def build_stub() -> FastMCP:
             states[request.subgame] = StubState()
         state = states.setdefault(request.subgame, StubState())
         action = choose_action(state, request.step)
+        state.scent = advance_scent(state.scent, state.position, 7, 7, 0.10)
         hint = hint_for(action)
         material = TurnMaterial(
             game_id=request.game_id,
@@ -45,6 +49,7 @@ def build_stub() -> FastMCP:
             role=Role.POLICE,
             prior_state_sha256=request.prior_state_sha256,
             action=action,
+            scent_heatmap=encode_scent(state.scent),
             hint=hint,
             intent=HintIntent.TRUTH if request.step % 3 else HintIntent.BLUFF,
         )

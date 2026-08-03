@@ -38,10 +38,15 @@ class TurnLedger:
         commitment = self.commitments.get(key)
         if commitment is None:
             raise ValueError("reveal received before commitment")
-        reveal = RevealedTurn(commitment=commitment, action=request.action, hint=request.hint)
+        reveal = RevealedTurn(
+            commitment=commitment,
+            scent_heatmap=request.scent_heatmap,
+            hint=request.hint,
+            barrier=request.barrier,
+            capture_claim=request.capture_claim,
+        )
         existing = self.reveals.get(key)
         if existing is not None and existing != reveal:
             raise ValueError("conflicting reveal for existing turn")
         self.reveals[key] = reveal
         return existing is None
-

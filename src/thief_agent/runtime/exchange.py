@@ -9,6 +9,7 @@ from thief_agent.domain.outcome import Outcome
 from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Role
 from thief_agent.orchestrator import TurnDecision
+from thief_agent.protocol.actions import ActionKind
 from thief_agent.protocol.envelope import WireEnvelope, make_envelope
 from thief_agent.protocol.messages import (
     CommitTurnRequest,
@@ -65,12 +66,17 @@ async def send_reveal(
     client: PeerTransport,
     gate: ExternalGatekeeper,
 ) -> None:
-    """Publish action and hint while retaining final-audit secrets."""
+    """Publish scent and hint while retaining the physical movement for final audit."""
     disclosure = decision.sealed.disclosure
     request = RevealTurnRequest(
         envelope=envelope(config, state_hash, subgame, step),
-        action=disclosure.action,
+        scent_heatmap=disclosure.scent_heatmap,
         hint=disclosure.hint,
+        barrier=(
+            disclosure.action.barrier
+            if disclosure.action.kind is ActionKind.BARRIER
+            else None
+        ),
     )
     ack = await gate.call(lambda: client.reveal_turn(request))
     if not ack.accepted:

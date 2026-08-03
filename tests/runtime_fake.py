@@ -6,7 +6,8 @@ from thief_agent.config import config_sha256
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditResult, FinalAuditRequest, verify_audit
 from thief_agent.crypto.commit_reveal import SealedTurn, TurnMaterial, seal_turn
-from thief_agent.domain.types import Move, Role
+from thief_agent.domain.scent import ScentMap, advance_scent
+from thief_agent.domain.types import Coord, Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
 from thief_agent.protocol.envelope import WireEnvelope, make_envelope
 from thief_agent.protocol.messages import (
@@ -18,6 +19,7 @@ from thief_agent.protocol.messages import (
     ResultProposalRequest,
     RevealTurnRequest,
 )
+from thief_agent.protocol.scent import encode_scent
 from thief_agent.protocol.service import ProtocolService
 from thief_agent.runtime.state import audit_record
 
@@ -25,15 +27,13 @@ AckRequest = NegotiationRequest | CommitTurnRequest | RevealTurnRequest | Result
 
 
 class FakePoliceTransport:
-    """Mirror all remote Police callbacks into the local Thief service."""
-
-    def __init__(
-        self, config: SharedConfig, service: ProtocolService, opponent_group: str,
-    ) -> None:
+    def __init__(self, config: SharedConfig, service: ProtocolService, opponent_group: str) -> None:
         """Keep strict shared identity and per-turn Police disclosures."""
         self.config, self.service = config, service
         self.opponent_group = opponent_group
         self.sealed: dict[tuple[int, int], SealedTurn] = {}
+        self.scents: dict[int, ScentMap] = {}
+        self.thief_reveals: list[RevealTurnRequest] = []
 
     async def health(self, request: HealthRequest) -> HealthResponse:
         """Return an independently typed Police identity."""
@@ -51,6 +51,15 @@ class FakePoliceTransport:
     async def commit_turn(self, request: CommitTurnRequest) -> Ack:
         """Create and callback one independently sealed Police commitment."""
         envelope = request.envelope
+        previous = self.scents.get(envelope.subgame, {})
+        next_scent = advance_scent(
+            previous,
+            Coord(self.config.board.police_start.row, self.config.board.police_start.col),
+            self.config.board.width,
+            self.config.board.height,
+            self.config.scent.decay,
+        )
+        self.scents[envelope.subgame] = next_scent
         material = TurnMaterial(
             game_id=envelope.game_id,
             subgame=envelope.subgame,
@@ -58,6 +67,7 @@ class FakePoliceTransport:
             role=Role.POLICE,
             prior_state_sha256=envelope.prior_state_sha256,
             action=TurnAction(kind=ActionKind.MOVE, move=Move.STAY),
+            scent_heatmap=encode_scent(next_scent),
             hint="I stayed still and watched",
             intent=HintIntent.TRUTH,
         )
@@ -74,6 +84,7 @@ class FakePoliceTransport:
 
     async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
         """Callback the matching Police immediate reveal."""
+        self.thief_reveals.append(request)
         envelope = request.envelope
         sealed = self.sealed[(envelope.subgame, envelope.step)]
         disclosure = sealed.disclosure
@@ -81,7 +92,7 @@ class FakePoliceTransport:
             envelope=self._envelope(
                 envelope.prior_state_sha256, envelope.subgame, envelope.step,
             ),
-            action=disclosure.action,
+            scent_heatmap=disclosure.scent_heatmap,
             hint=disclosure.hint,
         )
         self.service.reveal_turn(incoming)

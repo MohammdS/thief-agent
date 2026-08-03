@@ -97,8 +97,9 @@ uv run thief-agent peer --config config/game.secret.toml --game-config config/ga
 ```
 
 The command runs the FastMCP server and outbound client loop concurrently. Both peers lock
-the same series anchor, commit before either reveal, run every configured subgame, exchange
-final disclosures and result hashes, and write validated config/log/result artifacts under
+the same series anchor, commit before either reveal, exchange only scent heatmaps and hints
+during live play, run every configured subgame, then exchange hidden actions, nonces, and
+result hashes. It writes validated config/log/result artifacts under
 `artifacts/matches/`. It listens on the configured host/port at `/mcp`. A counted series
 also requires `--declaration PATH` so the pre-agreed declaration is preserved. Public
 exposure and setup are documented in the [network runbook](docs/public-network-runbook.md).
@@ -112,8 +113,9 @@ uv run thief-agent report artifacts/qualification/result_UNCOUNTED-DEVELOPMENT.j
   --mode dry-run --state-dir artifacts/reporting/runtime
 ```
 
-Replay reveals objective Police state only after whole-log hash, per-turn commitments, and
-physical transitions verify as `Verified OK`; altered, deleted, or reordered material is
+Live `reveal_turn` payloads contain no action or movement field. Replay reveals objective
+Police state only after whole-log hash, per-turn commitments, scent histories, and physical
+transitions verify as `Verified OK`; altered, deleted, or reordered material is
 `TAMPERED`. Reporting defaults to validation. Dry-run writes a MIME checkpoint without
 OAuth. Live delivery must be explicitly selected and is protected by send-only OAuth,
 fixed recipient, deadlines, retries, quota, token bucket, duplicate suppression, and a

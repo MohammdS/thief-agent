@@ -30,8 +30,14 @@ async def test_autonomous_peer_runs_mutual_commit_reveal_series(tmp_path: Path) 
     ).run()
     assert len(run.games) == 1
     assert run.games[0].state.step == 35
+    assert len(police.thief_reveals) == 35
+    assert all("action" not in reveal.model_dump() for reveal in police.thief_reveals)
+    assert all(reveal.scent_heatmap for reveal in police.thief_reveals)
     assert run.result.mutual_agreement.confirmed
     assert run.result_path.is_file()
     log_path = tmp_path / f"log_{config.game_id}_g01.json"
     log = MatchLogArtifact.model_validate_json(log_path.read_bytes())
+    turn_records = tuple(record for record in log.records if "hint" in record.payload)
+    assert len(turn_records) == 70
+    assert all("action" in record.payload for record in turn_records)
     assert ReplayVerifier(config).verify(log).status == "Verified OK"

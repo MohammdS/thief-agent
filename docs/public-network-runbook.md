@@ -38,9 +38,11 @@ re-run health and negotiation whenever either URL changes.
 3. JSON schemas and canonical/hash vectors match byte-for-byte.
 4. Group IDs, roles, timezone, start time, six subgames, and token budget are agreed.
 5. Each side can call the other's `health` endpoint under the 30-second deadline.
-6. Run one uncounted warm-up through commit, reveal, final audit, result proposal, replay,
+6. Confirm both peers use protocol `1.1`, and inspect one live reveal to ensure it contains
+   a scent heatmap and no `action` or `move` field.
+7. Run one uncounted warm-up through commit, reveal, final audit, result proposal, replay,
    and dry-run report.
-7. Save declaration/config/log/result artifacts independently and compare result hashes.
+8. Save declaration/config/log/result artifacts independently and compare result hashes.
 
 Start both peer commands. The lower group ID automatically proposes the shared UTC series
 anchor; the other mirrors it. Neither side reveals until both commitments are present.
@@ -48,7 +50,7 @@ anchor; the other mirrors it. Neither side reveals until both commitments are pr
 ## Failure handling
 
 Do not silently widen deadlines, retries, or queues during a counted game. An expired
-message, conflicting duplicate, config mismatch, invalid commitment, malformed LLM output,
+message, conflicting duplicate, config mismatch, invalid commitment or scent, malformed LLM output,
 or watchdog expiry must fail visibly. Preserve checkpoints and logs for audit. Never reveal
-nonce or truth/bluff intent before final audit, and never expose objective Police movement
-to the live Thief strategy or GUI.
+action, nonce, or truth/bluff intent before final audit. A live reveal containing movement
+is a protocol violation and must be rejected by the strict schema.

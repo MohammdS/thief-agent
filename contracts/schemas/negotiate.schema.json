@@ -82,7 +82,7 @@
   "description": "Propose the locked contract and series parameters.",
   "properties": {
     "contract_version": {
-      "const": "1.0",
+      "const": "1.1",
       "title": "Contract Version",
       "type": "string"
     },

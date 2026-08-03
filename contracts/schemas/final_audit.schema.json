@@ -74,8 +74,33 @@
       "additionalProperties": false,
       "description": "Store immediate public reveal data without nonce or intent.",
       "properties": {
-        "action": {
-          "$ref": "#/$defs/TurnAction"
+        "barrier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PointConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "capture_claim": {
+          "anyOf": [
+            {
+              "enum": [
+                "overlap",
+                "barrier",
+                "imprisonment"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Claim"
         },
         "commitment": {
           "pattern": "^[0-9a-f]{64}$",
@@ -86,11 +111,19 @@
           "maxLength": 500,
           "title": "Hint",
           "type": "string"
+        },
+        "scent_heatmap": {
+          "items": {
+            "$ref": "#/$defs/ScentCell"
+          },
+          "minItems": 1,
+          "title": "Scent Heatmap",
+          "type": "array"
         }
       },
       "required": [
         "commitment",
-        "action",
+        "scent_heatmap",
         "hint"
       ],
       "title": "RevealedTurn",
@@ -104,6 +137,34 @@
       ],
       "title": "Role",
       "type": "string"
+    },
+    "ScentCell": {
+      "additionalProperties": false,
+      "description": "Publish one global board cell intensity without an agent position field.",
+      "properties": {
+        "col": {
+          "minimum": 0,
+          "title": "Col",
+          "type": "integer"
+        },
+        "intensity": {
+          "minimum": 0,
+          "title": "Intensity",
+          "type": "number"
+        },
+        "row": {
+          "minimum": 0,
+          "title": "Row",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "row",
+        "col",
+        "intensity"
+      ],
+      "title": "ScentCell",
+      "type": "object"
     },
     "TurnAction": {
       "additionalProperties": false,
@@ -174,6 +235,14 @@
         "role": {
           "$ref": "#/$defs/Role"
         },
+        "scent_heatmap": {
+          "items": {
+            "$ref": "#/$defs/ScentCell"
+          },
+          "minItems": 1,
+          "title": "Scent Heatmap",
+          "type": "array"
+        },
         "step": {
           "minimum": 0,
           "title": "Step",
@@ -192,6 +261,7 @@
         "role",
         "prior_state_sha256",
         "action",
+        "scent_heatmap",
         "hint",
         "intent",
         "nonce"

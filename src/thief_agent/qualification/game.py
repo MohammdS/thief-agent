@@ -41,6 +41,7 @@ async def run_game(
     state = initial_state(config)
     belief = uniform_belief(state.width, state.height)
     scent: ScentMap = {}
+    own_scent: ScentMap = {}
     records: list[LogRecord] = []
     tokens = 0
     for step in range(1, config.turns.max_steps + 1):
@@ -48,7 +49,12 @@ async def run_game(
         decision = await orchestrator.decide_turn(
             observation, config.game_id, subgame, board_sha256(state),
             HintIntent.BLUFF if step % 2 else HintIntent.TRUTH,
+            own_scent=own_scent,
+            scent_decay=config.scent.decay,
         )
+        own_scent = {
+            Coord(cell.row, cell.col): cell.intensity for cell in decision.scent_heatmap
+        }
         records.append(sealed_record(decision.sealed))
         tokens += decision.prompt_tokens + decision.completion_tokens
         state = apply_move(state, decision.sealed.disclosure.role, decision.move)
@@ -101,4 +107,3 @@ def apply_police(state: BoardState, sealed: SealedTurn, capacity: int) -> BoardS
     if action.kind is ActionKind.BARRIER and action.barrier is not None:
         return place_barrier(state, Coord(action.barrier.row, action.barrier.col), capacity)
     raise ValueError("stub returned malformed Police action")
-

@@ -44,7 +44,7 @@ class PeerClient:
         return await self._call("commit_turn", request, Ack)
 
     async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
-        """Reveal action and hint after both commitments are locked."""
+        """Reveal scent and hint after both commitments are locked."""
         return await self._call("reveal_turn", request, Ack)
 
     async def final_audit(self, request: FinalAuditRequest) -> AuditResult:

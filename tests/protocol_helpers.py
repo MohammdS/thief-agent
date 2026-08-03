@@ -3,6 +3,7 @@ from thief_agent.domain.types import Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
 from thief_agent.protocol.envelope import make_envelope
 from thief_agent.protocol.messages import CommitTurnRequest, RevealTurnRequest
+from thief_agent.protocol.scent import ScentCell
 
 CONFIG_HASH = "a" * 64
 STATE_HASH = "b" * 64
@@ -33,6 +34,7 @@ def material(**updates: object) -> TurnMaterial:
         "role": Role.POLICE,
         "prior_state_sha256": STATE_HASH,
         "action": action(),
+        "scent_heatmap": (ScentCell(row=0, col=0, intensity=0.9),),
         "hint": "I moved toward open ground",
         "intent": HintIntent.TRUTH,
     }
@@ -44,6 +46,9 @@ def commit_request(commitment: str, *, step: int = 1) -> CommitTurnRequest:
     return CommitTurnRequest(envelope=envelope(step=step), commitment=commitment)
 
 
-def reveal_request(*, move: Move = Move.SOUTH, hint: str = "safe hint") -> RevealTurnRequest:
-    return RevealTurnRequest(envelope=envelope(), action=action(move), hint=hint)
-
+def reveal_request(*, intensity: float = 0.9, hint: str = "safe hint") -> RevealTurnRequest:
+    return RevealTurnRequest(
+        envelope=envelope(),
+        scent_heatmap=(ScentCell(row=0, col=0, intensity=intensity),),
+        hint=hint,
+    )

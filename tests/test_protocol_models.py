@@ -3,7 +3,14 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pydantic import ValidationError
 
-from tests.protocol_helpers import CONFIG_HASH, GAME_ID, STATE_HASH, envelope
+from tests.protocol_helpers import (
+    CONFIG_HASH,
+    GAME_ID,
+    STATE_HASH,
+    action,
+    envelope,
+    reveal_request,
+)
 from thief_agent.config.models import PointConfig
 from thief_agent.domain.types import Move, Role
 from thief_agent.protocol.actions import ActionKind, TurnAction
@@ -14,6 +21,8 @@ from thief_agent.protocol.machine import (
     match_machine,
     turn_machine,
 )
+from thief_agent.protocol.messages import RevealTurnRequest
+from thief_agent.protocol.scent import ScentCell
 
 
 def test_envelope_rejects_expiry_and_unknown_fields() -> None:
@@ -71,3 +80,35 @@ def test_envelope_identity_values() -> None:
     assert (request.game_id, request.sender) == (GAME_ID, Role.POLICE)
     assert (request.config_sha256, request.prior_state_sha256) == (CONFIG_HASH, STATE_HASH)
 
+
+def test_live_reveal_contains_heatmap_but_rejects_physical_action() -> None:
+    request = reveal_request()
+    payload = request.model_dump(mode="json")
+    assert "scent_heatmap" in payload
+    assert "action" not in payload
+    assert "move" not in payload
+    with pytest.raises(ValidationError, match="Extra inputs"):
+        RevealTurnRequest.model_validate(payload | {"action": action().model_dump(mode="json")})
+
+
+def test_scent_heatmap_requires_unique_row_major_cells() -> None:
+    reversed_cells = (
+        ScentCell(row=1, col=0, intensity=0.4),
+        ScentCell(row=0, col=0, intensity=0.9),
+    )
+    with pytest.raises(ValidationError, match="row-major"):
+        RevealTurnRequest(
+            envelope=envelope(),
+            scent_heatmap=reversed_cells,
+            hint="scent only",
+        )
+    duplicate_cells = (
+        ScentCell(row=0, col=0, intensity=0.9),
+        ScentCell(row=0, col=0, intensity=0.8),
+    )
+    with pytest.raises(ValidationError, match="unique"):
+        RevealTurnRequest(
+            envelope=envelope(),
+            scent_heatmap=duplicate_cells,
+            hint="scent only",
+        )
