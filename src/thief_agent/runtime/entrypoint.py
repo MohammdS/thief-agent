@@ -14,6 +14,9 @@ from thief_agent.protocol.service import ProtocolService
 from thief_agent.runtime.models import PeerSeriesRun
 from thief_agent.runtime.series import PeerSeriesRunner
 
+SERVER_STARTUP_GRACE_SECONDS = 0.5
+SERVER_SHUTDOWN_GRACE_SECONDS = 0.5
+
 
 async def run_peer_runtime(
     local_path: Path,
@@ -34,7 +37,7 @@ async def run_peer_runtime(
         show_banner=True,
     ))
     try:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(SERVER_STARTUP_GRACE_SECONDS)
         if server_task.done():
             await server_task
         commit = subprocess.run(
@@ -50,7 +53,11 @@ async def run_peer_runtime(
         runner = PeerSeriesRunner(
             shared, local, service, client, output, commit, declaration_path,
         )
-        return await runner.run()
+        result = await runner.run()
+        # Let the peer finish reading its final MCP acknowledgement before the
+        # local ASGI task is cancelled.
+        await asyncio.sleep(SERVER_SHUTDOWN_GRACE_SECONDS)
+        return result
     finally:
         server_task.cancel()
         with suppress(asyncio.CancelledError):
