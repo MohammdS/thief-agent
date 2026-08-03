@@ -159,7 +159,9 @@ Project Python files are limited to 150 lines, strict typing is enabled, and CI 
 at least 85% branch-aware coverage. Committed schemas live in `contracts/`; deterministic
 analysis lives in `artifacts/analysis/` and `analysis/strategy_sensitivity.ipynb`.
 The machine-readable real-peer record is
-`artifacts/analysis/interoperability-summary.json`.
+`artifacts/analysis/interoperability-summary.json`; an enhanced-Police follow-up (Thief
+won 5-1, 55-45 points) is recorded in
+`artifacts/analysis/enhanced-interoperability-summary.json`.
 
 ## Submission blockers
 

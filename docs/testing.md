@@ -38,6 +38,11 @@ localhost series with exit code zero, matching configs/gameplay audit streams, a
 byte-identical mutually confirmed result, and 12/12 independently verified replays. See
 `artifacts/analysis/interoperability-summary.json`.
 
+Against the enhanced Police commit, Thief survived 5/6 and won the series 55-45; the
+single Police win was a turn-35 barrier capture. Both processes exited zero, all gameplay
+streams matched, and all 12 replay checks verified. See
+`artifacts/analysis/enhanced-interoperability-summary.json`.
+
 ## Reproduce
 
 ```powershell
