@@ -21,8 +21,8 @@ public server tools.
 an ephemeral loopback port. The real Thief orchestrator, strategy, commitment code,
 physical validators, belief update, artifact models, and replay verifier run unchanged.
 
-Evidence is locked to Git commit
-`9b07886b126ca99aa8c0cb0d5f9eedfcb01b6426`. Across six uncounted games:
+Evidence is locked to privacy-contract commit
+`b8da971b02499aaf34a626e5fdbca69ff29e8d96`. Across six uncounted games:
 
 - every game terminated at the 35-step survival threshold;
 - the Police stub placed five permanent barriers per game;

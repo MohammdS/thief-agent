@@ -131,8 +131,8 @@ The automated suite covers physical invariants, scent, scoring, schemas, two-pro
 commit-reveal/tampering, Bayesian filtering, legal action selection, LLM fallback,
 reliability, Gmail mocks, GUI information boundaries, the symmetric autonomous runtime,
 replay, and the six-game harness.
-The qualification package is pinned to commit
-`9b07886b126ca99aa8c0cb0d5f9eedfcb01b6426`; all six games terminated after 35 steps,
+The qualification package is pinned to privacy-contract commit
+`b8da971b02499aaf34a626e5fdbca69ff29e8d96`; all six games terminated after 35 steps,
 all six replays verified, and a corruption probe returned `TAMPERED`. See
 [testing and evidence](docs/testing.md).
 
