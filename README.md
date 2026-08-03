@@ -143,8 +143,8 @@ commit-reveal/tampering, Bayesian filtering, legal action selection, LLM fallbac
 reliability, Gmail mocks, GUI information boundaries, the symmetric autonomous runtime,
 replay, and the six-game harness. All qualification games terminated, all six replays
 verified, and a corruption probe returned `TAMPERED`. The real independent Police peer
-has also completed an uncounted localhost match with matching result hashes and verified
-replay on both sides. See
+has also completed an uncounted six-subgame localhost series with matching result hashes
+and verified replay on both sides. See
 [testing and evidence](docs/testing.md).
 
 ```powershell
@@ -158,6 +158,8 @@ uv run python scripts/submission_check.py --allow-placeholders
 Project Python files are limited to 150 lines, strict typing is enabled, and CI requires
 at least 85% branch-aware coverage. Committed schemas live in `contracts/`; deterministic
 analysis lives in `artifacts/analysis/` and `analysis/strategy_sensitivity.ipynb`.
+The machine-readable real-peer record is
+`artifacts/analysis/interoperability-summary.json`.
 
 ## Submission blockers
 

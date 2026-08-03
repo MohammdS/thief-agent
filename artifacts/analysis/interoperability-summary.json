@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "evidence_type": "uncounted_localhost_interoperability",
+  "game_id": "UNCOUNTED-DEVELOPMENT",
+  "game_uid": "UNCOUNTED-DEVELOPMENT-1785728399",
+  "counted": false,
+  "transport": "FastMCP Streamable HTTP over independent localhost processes",
+  "process_exit_codes": {
+    "police": 0,
+    "thief": 0
+  },
+  "subgames": 6,
+  "outcomes": [
+    "survival",
+    "survival",
+    "survival",
+    "survival",
+    "survival",
+    "survival"
+  ],
+  "total_score": {
+    "POLICE_GROUP_ID": 30,
+    "THIEF_GROUP_ID": 60
+  },
+  "agreed_configs_matching": 6,
+  "audited_gameplay_streams_matching": 6,
+  "replays": {
+    "police_verified": 6,
+    "thief_verified": 6,
+    "frames_per_replay": 70,
+    "failures": 0
+  },
+  "result_file_sha256": "c23476c0a5c3381b6f2b3d3ff0d3ceaa1a7a21250abef9e1c4ff5b3e6bccc8f2",
+  "canonical_agreement_sha256": "b3284dc808e1fe5a0888742860fffcb612c0487b6ccd00a007d843511d400ac4",
+  "mutual_agreement_confirmed": true,
+  "git_commits": {
+    "POLICE_GROUP_ID": "b9335e775a87ce050eb111e61f99792761aa0bd3",
+    "THIEF_GROUP_ID": "f4e5f03187559933afcb1f1e4951e5964011ed45"
+  },
+  "started_at": "2026-08-03T03:39:59Z",
+  "ended_at": "2026-08-03T03:43:34Z",
+  "boundary": "Engineering evidence only; not a counted match or a second external opponent."
+}
+

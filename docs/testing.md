@@ -33,6 +33,11 @@ The deterministic stub follows a serpentine script. Therefore 6/6 Thief survival
 pipeline result, not an estimate of strategic strength and not a valid counted result.
 The committed package is under `artifacts/qualification/`.
 
+The independent Police and Thief processes also completed a real uncounted six-subgame
+localhost series with exit code zero, matching configs/gameplay audit streams, a
+byte-identical mutually confirmed result, and 12/12 independently verified replays. See
+`artifacts/analysis/interoperability-summary.json`.
+
 ## Reproduce
 
 ```powershell
