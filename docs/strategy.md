@@ -2,12 +2,12 @@
 
 ## Belief update
 
-The shared Police start supplies the first point belief. Before each decision,
-`predict_belief` spreads probability over legal Police N/S/E/W/STAY destinations and
-removes public barriers. After Police reveals its heatmap, the Thief tests every legal cell
-against the complete deterministic scent recurrence. Exactly one matching emitter becomes
-the next point belief; zero or ambiguous matches fail closed. This derives only from the
-public heatmap and locked formula, never objective Police state.
+The shared Police start supplies the first point belief. A received heatmap contains the
+decayed trail through Police's previous action; it deliberately excludes the current
+action's new emission. The Thief applies that historical evidence to its prior belief,
+then `predict_belief` spreads probability over one legal hidden N/S/E/W/STAY action and
+removes public barriers. It never converts the delayed trail into exact current Police
+state.
 
 ## Algorithmic movement
 

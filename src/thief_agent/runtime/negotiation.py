@@ -27,10 +27,15 @@ async def negotiate_series(
 ) -> NegotiationRequest:
     """Verify Police identity and agree on one coordinator-owned anchor."""
     state_hash = state_sha256(initial_state(config))
-    health = HealthRequest(envelope=make_envelope(
-        config.game_id, config_sha256(config), state_hash,
-        sender=Role.THIEF, lifetime_seconds=request_lifetime(config),
-    ))
+    health = HealthRequest(
+        envelope=make_envelope(
+            config.game_id,
+            config_sha256(config),
+            state_hash,
+            sender=Role.THIEF,
+            lifetime_seconds=request_lifetime(config),
+        )
+    )
     response = await gate.call(lambda: client.health(health))
     if response.role is not Role.POLICE or response.config_sha256 != config_sha256(config):
         raise ValueError("remote endpoint is not the agreed Police peer")
@@ -52,7 +57,11 @@ async def negotiate_series(
             "coordinator negotiation",
         )
         proposal = request(
-            config, own, state_hash, incoming.series_started_at, incoming.game_uid,
+            config,
+            own,
+            state_hash,
+            incoming.series_started_at,
+            incoming.game_uid,
         )
         await send(proposal, client, gate)
     validate_pair(config, incoming, proposal, opponent)
@@ -70,10 +79,13 @@ def request(
     uid = game_uid or f"{config.game_id}-{int(started_at.timestamp())}"
     return NegotiationRequest(
         envelope=make_envelope(
-            config.game_id, config_sha256(config), state_hash,
-            sender=Role.THIEF, lifetime_seconds=request_lifetime(config),
+            config.game_id,
+            config_sha256(config),
+            state_hash,
+            sender=Role.THIEF,
+            lifetime_seconds=request_lifetime(config),
         ),
-        contract_version="1.1",
+        contract_version="1.3",
         counted=config.counted,
         subgames=config.series.subgames,
         sender_group_id=group_id,
@@ -103,12 +115,16 @@ def validate_pair(
     if incoming.sender_group_id != opponent_group:
         raise ValueError("negotiation group identity mismatch")
     actual = (
-        incoming.game_uid, incoming.series_started_at,
-        incoming.counted, incoming.subgames,
+        incoming.game_uid,
+        incoming.series_started_at,
+        incoming.counted,
+        incoming.subgames,
     )
     expected = (
-        outgoing.game_uid, outgoing.series_started_at,
-        config.counted, config.series.subgames,
+        outgoing.game_uid,
+        outgoing.series_started_at,
+        config.counted,
+        config.series.subgames,
     )
     if actual != expected:
         raise ValueError("peer negotiation does not match local series")

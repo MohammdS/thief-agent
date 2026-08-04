@@ -6,8 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from thief_agent.crypto.commit_reveal import SealedTurn, TurnMaterial, seal_turn
-from thief_agent.domain.board import destination
-from thief_agent.domain.scent import advance_scent
+from thief_agent.domain.scent import decay_scent
 from thief_agent.domain.types import Coord, Move, Role
 from thief_agent.language.candidates import build_hint_request
 from thief_agent.language.policy import HintPolicy
@@ -62,14 +61,7 @@ class ThiefOrchestrator:
         """Choose, ground, seal, checkpoint, and heartbeat one Thief turn."""
         self._watchdog.assert_alive()
         move = self._strategy.choose_move(observation)
-        next_scent = advance_scent(
-            own_scent or {},
-            destination(observation.thief, move),
-            observation.width,
-            observation.height,
-            scent_decay,
-        )
-        scent_heatmap = encode_scent(next_scent)
+        scent_heatmap = encode_scent(decay_scent(own_scent or {}, scent_decay))
         hint_request = build_hint_request(move, preferred_intent, max_words)
         hint = await self._hints.generate(observation.step, hint_request)
         material = TurnMaterial(
@@ -77,6 +69,7 @@ class ThiefOrchestrator:
             subgame=subgame,
             step=observation.step,
             role=Role.THIEF,
+            turn_token=Role.POLICE,
             prior_state_sha256=prior_state_sha256,
             action=TurnAction(kind=ActionKind.MOVE, move=move),
             scent_heatmap=scent_heatmap,
@@ -84,13 +77,15 @@ class ThiefOrchestrator:
             intent=hint.intent,
         )
         sealed = seal_turn(material)
-        self._checkpoint.save({
-            "game_id": game_id,
-            "subgame": subgame,
-            "step": observation.step,
-            "commitment": sealed.commitment,
-            "disclosure": sealed.disclosure.model_dump(mode="json"),
-        })
+        self._checkpoint.save(
+            {
+                "game_id": game_id,
+                "subgame": subgame,
+                "step": observation.step,
+                "commitment": sealed.commitment,
+                "disclosure": sealed.disclosure.model_dump(mode="json"),
+            }
+        )
         self._watchdog.heartbeat()
         return TurnDecision(
             move,

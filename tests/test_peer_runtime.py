@@ -15,29 +15,51 @@ from thief_agent.runtime.series import PeerSeriesRunner
 @pytest.mark.asyncio
 async def test_autonomous_peer_runs_mutual_commit_reveal_series(tmp_path: Path) -> None:
     config = load_shared_config(Path("config/game.json"))
-    config = config.model_copy(update={
-        "series": config.series.model_copy(update={"subgames": 1}),
-    })
+    config = config.model_copy(
+        update={
+            "series": config.series.model_copy(update={"subgames": 1}),
+        }
+    )
     local = load_local_config(Path("config/game.toml.example"))
-    local = local.model_copy(update={
-        "identity": local.identity.model_copy(update={"group_id": "THIEF_GROUP_ID"}),
-        "peer": local.peer.model_copy(update={"opponent_group_id": "POLICE_GROUP_ID"}),
-    })
+    local = local.model_copy(
+        update={
+            "identity": local.identity.model_copy(update={"group_id": "THIEF_GROUP_ID"}),
+            "peer": local.peer.model_copy(update={"opponent_group_id": "POLICE_GROUP_ID"}),
+        }
+    )
     service = ProtocolService(config.game_id, config_sha256(config))
     police = FakePoliceTransport(config, service, "POLICE_GROUP_ID")
     run = await PeerSeriesRunner(
-        config, local, service, police, tmp_path, "a" * 40,
+        config,
+        local,
+        service,
+        police,
+        tmp_path,
+        "a" * 40,
     ).run()
     assert len(run.games) == 1
     assert run.games[0].state.step == 35
     assert len(police.thief_reveals) == 35
     assert all("action" not in reveal.model_dump() for reveal in police.thief_reveals)
-    assert all(reveal.scent_heatmap for reveal in police.thief_reveals)
+    assert police.thief_reveals[0].scent_heatmap == ()
+    assert all(reveal.scent_heatmap for reveal in police.thief_reveals[1:])
+    assert max(
+        cell.intensity for cell in police.thief_reveals[1].scent_heatmap
+    ) == pytest.approx(0.81)
     assert run.result.mutual_agreement.confirmed
     assert run.result_path.is_file()
     log_path = tmp_path / f"log_{config.game_id}_g01.json"
     log = MatchLogArtifact.model_validate_json(log_path.read_bytes())
     turn_records = tuple(record for record in log.records if "hint" in record.payload)
-    assert len(turn_records) == 70
+    assert len(turn_records) == 69
     assert all("action" in record.payload for record in turn_records)
+    assert all(record.payload["turn_token"] != record.payload["role"] for record in turn_records)
+    assert police.events[:6] == [
+        ("thief_commit", 1),
+        ("thief_reveal", 1),
+        ("police_commit", 1),
+        ("police_reveal", 1),
+        ("thief_commit", 2),
+        ("thief_reveal", 2),
+    ]
     assert ReplayVerifier(config).verify(log).status == "Verified OK"

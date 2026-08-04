@@ -129,7 +129,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Reveal observable scent and hint while withholding the physical action.",
+  "description": "Reveal observations and transfer the turn while withholding the action.",
   "properties": {
     "barrier": {
       "anyOf": [
@@ -171,13 +171,16 @@
       "items": {
         "$ref": "#/$defs/ScentCell"
       },
-      "minItems": 1,
       "title": "Scent Heatmap",
       "type": "array"
+    },
+    "turn_token": {
+      "$ref": "#/$defs/Role"
     }
   },
   "required": [
     "envelope",
+    "turn_token",
     "scent_heatmap",
     "hint"
   ],

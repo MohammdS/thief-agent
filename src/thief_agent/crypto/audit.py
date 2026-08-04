@@ -8,6 +8,7 @@ from pydantic import Field
 
 from thief_agent.config.models import PointConfig, StrictModel
 from thief_agent.crypto.commit_reveal import TurnDisclosure, verify_commitment
+from thief_agent.domain.types import Role
 from thief_agent.protocol.actions import ActionKind
 from thief_agent.protocol.envelope import HASH_PATTERN, WireEnvelope
 from thief_agent.protocol.scent import ScentHeatmap
@@ -17,6 +18,7 @@ class RevealedTurn(StrictModel):
     """Store immediate public reveal data without nonce or intent."""
 
     commitment: str = Field(pattern=HASH_PATTERN)
+    turn_token: Role
     scent_heatmap: ScentHeatmap
     hint: str = Field(max_length=500)
     barrier: PointConfig | None = None
@@ -54,6 +56,8 @@ def verify_audit(records: tuple[AuditRecord, ...]) -> AuditResult:
             errors.append(f"record {index}: scent heatmap mismatch")
         if record.reveal.hint != record.disclosure.hint:
             errors.append(f"record {index}: hint mismatch")
+        if record.reveal.turn_token is not record.disclosure.turn_token:
+            errors.append(f"record {index}: turn token mismatch")
         action = record.disclosure.action
         expected_barrier = action.barrier if action.kind is ActionKind.BARRIER else None
         if record.reveal.barrier != expected_barrier:

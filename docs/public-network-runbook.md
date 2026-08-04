@@ -38,14 +38,15 @@ re-run health and negotiation whenever either URL changes.
 3. JSON schemas and canonical/hash vectors match byte-for-byte.
 4. Group IDs, roles, timezone, start time, six subgames, and token budget are agreed.
 5. Each side can call the other's `health` endpoint under the 30-second deadline.
-6. Confirm both peers use protocol `1.1`, and inspect one live reveal to ensure it contains
-   a scent heatmap and no `action` or `move` field.
+6. Confirm both peers use protocol `1.3`; each role's first live reveal must have an empty
+   heatmap and later reveals must contain delayed scent with no `action` or `move` field.
 7. Run one uncounted warm-up through commit, reveal, final audit, result proposal, replay,
    and dry-run report.
 8. Save declaration/config/log/result artifacts independently and compare result hashes.
 
 Start both peer commands. The lower group ID automatically proposes the shared UTC series
-anchor; the other mirrors it. Neither side reveals until both commitments are present.
+anchor; the other mirrors it. Thief owns the first token; afterward neither side may
+commit until the opponent's reveal transfers ownership to it.
 
 ## Failure handling
 

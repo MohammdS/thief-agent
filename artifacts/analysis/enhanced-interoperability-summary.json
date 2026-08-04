@@ -1,4 +1,8 @@
 {
+  "status": "SUPERSEDED_INVALID_TURN_ORDER",
+  "valid_gameplay_order": false,
+  "superseded_by_protocol": "1.2",
+  "invalidation_reason": "Historical run committed both roles before reveal; protocol 1.2 requires ping-pong token ownership.",
   "schema_version": "1.0",
   "evidence_type": "uncounted_localhost_enhanced_police_regression",
   "game_id": "UNCOUNTED-DEVELOPMENT",

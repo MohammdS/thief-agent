@@ -70,12 +70,11 @@ async def send_reveal(
     disclosure = decision.sealed.disclosure
     request = RevealTurnRequest(
         envelope=envelope(config, state_hash, subgame, step),
+        turn_token=disclosure.turn_token,
         scent_heatmap=disclosure.scent_heatmap,
         hint=disclosure.hint,
         barrier=(
-            disclosure.action.barrier
-            if disclosure.action.kind is ActionKind.BARRIER
-            else None
+            disclosure.action.barrier if disclosure.action.kind is ActionKind.BARRIER else None
         ),
     )
     ack = await gate.call(lambda: client.reveal_turn(request))

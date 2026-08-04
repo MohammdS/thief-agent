@@ -7,6 +7,7 @@ from typing import Protocol
 from thief_agent.crypto.audit import AuditResult, FinalAuditRequest
 from thief_agent.protocol.messages import (
     Ack,
+    CaptureClaimRequest,
     CommitTurnRequest,
     HealthRequest,
     HealthResponse,
@@ -33,6 +34,10 @@ class PeerTransport(Protocol):
 
     async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
         """Submit one immediate reveal."""
+        ...
+
+    async def capture_claim(self, request: CaptureClaimRequest) -> Ack:
+        """Submit one provisional public capture claim."""
         ...
 
     async def final_audit(self, request: FinalAuditRequest) -> AuditResult:

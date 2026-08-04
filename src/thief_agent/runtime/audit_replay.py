@@ -7,8 +7,13 @@ from dataclasses import dataclass
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditRecord, verify_audit
 from thief_agent.domain.board import apply_move, place_barrier
-from thief_agent.domain.outcome import Outcome, TerminalReason, evaluate_outcome
-from thief_agent.domain.scent import ScentMap, advance_scent
+from thief_agent.domain.outcome import (
+    Outcome,
+    TerminalReason,
+    evaluate_outcome,
+    score_outcome,
+)
+from thief_agent.domain.scent import ScentMap, decay_scent, deposit_scent
 from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Coord, Role
 from thief_agent.protocol.actions import ActionKind
@@ -31,9 +36,6 @@ def reconstruct_audited_subgame(
     audit = verify_audit(records)
     if audit.status != "Verified OK":
         raise ValueError(f"cannot replay tampered disclosures: {audit.errors}")
-    by_turn = {(record.disclosure.step, record.disclosure.role): record for record in records}
-    if len(by_turn) != len(records):
-        raise ValueError("duplicate role disclosure in audited subgame")
     board = BoardState(
         config.board.width,
         config.board.height,
@@ -41,32 +43,54 @@ def reconstruct_audited_subgame(
         Coord(config.board.police_start.row, config.board.police_start.col),
     )
     scents: dict[Role, ScentMap] = {Role.THIEF: {}, Role.POLICE: {}}
-    final_step = max((step for step, _ in by_turn), default=0)
-    for step in range(1, final_step + 1):
-        pair = tuple(by_turn.get((step, role)) for role in (Role.THIEF, Role.POLICE))
-        if any(record is None for record in pair):
-            raise ValueError(f"step {step} does not contain both role disclosures")
-        thief_record, police_record = pair
-        assert thief_record is not None and police_record is not None
-        board = apply_action(board, thief_record, config.barriers.police_capacity)
-        board = apply_action(board, police_record, config.barriers.police_capacity)
-        board = board.after_full_turn()
-        for role, record in ((Role.THIEF, thief_record), (Role.POLICE, police_record)):
-            scents[role] = advance_scent(
-                scents[role],
-                board.position(role),
-                board.width,
-                board.height,
-                config.scent.decay,
+    expected_role, expected_step = Role.THIEF, 1
+    terminal: Outcome | None = None
+    for index, record in enumerate(records):
+        disclosure = record.disclosure
+        if (disclosure.role, disclosure.step) != (expected_role, expected_step):
+            raise ValueError(
+                f"turn {index + 1} must be {expected_role.value} step {expected_step}",
             )
-            if record.disclosure.scent_heatmap != encode_scent(scents[role]):
-                raise ValueError(f"step {step} {role.value} scent heatmap is not action-derived")
-        outcome = evaluate_outcome(board, config)
-        validate_claims(pair, board, outcome, step)
-        if outcome is not None:
-            if step != final_step:
-                raise ValueError(f"audited actions continue after terminal step {step}")
-            return AuditedSubgame(board, outcome)
+        recipient = Role.POLICE if disclosure.role is Role.THIEF else Role.THIEF
+        if disclosure.turn_token is not recipient:
+            raise ValueError(f"step {expected_step} transfers the token incorrectly")
+        role = disclosure.role
+        public_scent = decay_scent(scents[role], config.scent.decay)
+        if disclosure.scent_heatmap != encode_scent(public_scent):
+            raise ValueError(
+                f"step {expected_step} {role.value} scent is not one turn delayed",
+            )
+        board = apply_action(board, record, config.barriers.police_capacity)
+        scents[role] = deposit_scent(
+            public_scent,
+            board.position(role),
+            board.width,
+            board.height,
+        )
+        if role is Role.THIEF:
+            board = board.after_full_turn()
+            outcome = (
+                score_outcome(TerminalReason.SURVIVAL, config)
+                if board.step >= config.turns.survival_threshold
+                else None
+            )
+            expected_role = Role.POLICE
+        else:
+            outcome = evaluate_outcome(board, config)
+            expected_role, expected_step = Role.THIEF, expected_step + 1
+        validate_claims((record,), board, outcome, disclosure.step)
+        if outcome is not None and terminal is None:
+            terminal = outcome
+        if (
+            outcome is not None
+            and outcome.reason is TerminalReason.SURVIVAL
+            and index != len(records) - 1
+        ):
+            raise ValueError(
+                f"audited actions continue after terminal step {disclosure.step}",
+            )
+    if terminal is not None:
+        return AuditedSubgame(board, terminal)
     raise ValueError("audited subgame has no terminal outcome")
 
 
@@ -92,9 +116,7 @@ def validate_claims(
 ) -> None:
     """Reject live terminal claims that the final hidden actions do not prove."""
     claims = tuple(
-        record.reveal.capture_claim
-        for record in records
-        if record and record.reveal.capture_claim
+        record.reveal.capture_claim for record in records if record and record.reveal.capture_claim
     )
     if not claims:
         return

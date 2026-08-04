@@ -32,6 +32,11 @@ class LiveSnapshotStore:
             "network_state": snapshot.network_state,
             "audit_state": snapshot.audit_state,
             "local_turn": snapshot.local_turn,
+            "subgame": snapshot.subgame,
+            "series_size": snapshot.series_size,
+            "protocol_state": snapshot.protocol_state,
+            "last_event": snapshot.last_event,
+            "terminal_reason": snapshot.terminal_reason,
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
@@ -44,11 +49,23 @@ class LiveSnapshotStore:
             return None
         raw = json.loads(self.path.read_text(encoding="utf-8"))
         return LiveSnapshot(
-            raw["width"], raw["height"], parse_coord(raw["thief"]),
+            raw["width"],
+            raw["height"],
+            parse_coord(raw["thief"]),
             frozenset(parse_coord(cell) for cell in raw["known_barriers"]),
-            parse_heatmap(raw["police_scent"]), parse_heatmap(raw["police_belief"]),
-            raw["step"], raw["latest_hint"], raw["tokens_used"],
-            raw["network_state"], raw["audit_state"], raw["local_turn"],
+            parse_heatmap(raw["police_scent"]),
+            parse_heatmap(raw["police_belief"]),
+            raw["step"],
+            raw["latest_hint"],
+            raw["tokens_used"],
+            raw["network_state"],
+            raw["audit_state"],
+            raw["local_turn"],
+            raw.get("subgame", 0),
+            raw.get("series_size", 1),
+            raw.get("protocol_state", "Waiting for peer"),
+            raw.get("last_event", "No protocol event yet"),
+            raw.get("terminal_reason"),
         )
 
 

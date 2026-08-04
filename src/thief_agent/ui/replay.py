@@ -17,7 +17,9 @@ class ReplayGui:
         self._root = tk.Tk()
         self._root.title("Thief Peer - Verified Replay")
         self._banner = tk.Label(
-            self._root, text=result.status, font=("Segoe UI", 18, "bold"),
+            self._root,
+            text=result.status,
+            font=("Segoe UI", 18, "bold"),
             fg="#15803d" if result.status == "Verified OK" else "#b91c1c",
         )
         self._banner.pack(pady=10)
@@ -43,14 +45,22 @@ class ReplayGui:
             for col in range(frame.state.width):
                 x0, y0 = GRID_MARGIN + col * CELL_SIZE, GRID_MARGIN + row * CELL_SIZE
                 self._canvas.create_rectangle(
-                    x0, y0, x0 + CELL_SIZE, y0 + CELL_SIZE, outline="#334155",
+                    x0,
+                    y0,
+                    x0 + CELL_SIZE,
+                    y0 + CELL_SIZE,
+                    outline="#334155",
                     fill="#e2e8f0",
                 )
         for barrier in frame.state.barriers:
             x0 = GRID_MARGIN + barrier.col * CELL_SIZE + 12
             y0 = GRID_MARGIN + barrier.row * CELL_SIZE + 12
             self._canvas.create_rectangle(
-                x0, y0, x0 + CELL_SIZE - 24, y0 + CELL_SIZE - 24, fill="#111827",
+                x0,
+                y0,
+                x0 + CELL_SIZE - 24,
+                y0 + CELL_SIZE - 24,
+                fill="#111827",
             )
         draw_agent(self._canvas, frame.state.thief, "#16a34a", "T")
         draw_agent(self._canvas, frame.state.police, "#dc2626", "P")
@@ -58,4 +68,3 @@ class ReplayGui:
     def run(self) -> None:
         """Enter the replay Tk event loop."""
         self._root.mainloop()
-

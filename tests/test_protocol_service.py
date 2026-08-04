@@ -12,8 +12,10 @@ from tests.protocol_helpers import (
 )
 from thief_agent.crypto.audit import AuditRecord, FinalAuditRequest, RevealedTurn
 from thief_agent.crypto.commit_reveal import seal_turn
+from thief_agent.domain.types import Role
 from thief_agent.protocol.firewall import ObservationEvidence
 from thief_agent.protocol.messages import (
+    CommitTurnRequest,
     HealthRequest,
     NegotiationRequest,
     RevealTurnRequest,
@@ -30,8 +32,12 @@ def test_health_and_negotiation_validate_identity_and_counted_rule() -> None:
     assert peer.health(HealthRequest(envelope=envelope())).role == "thief"
     rejected = peer.negotiate(
         NegotiationRequest(
-            envelope=envelope(), contract_version="1.1", counted=True, subgames=1,
-            sender_group_id="other-group", game_uid="game-uid",
+            envelope=envelope(),
+            contract_version="1.3",
+            counted=True,
+            subgames=1,
+            sender_group_id="other-group",
+            game_uid="game-uid",
             series_started_at=datetime.now(UTC),
         )
     )
@@ -43,6 +49,7 @@ def test_health_and_negotiation_validate_identity_and_counted_rule() -> None:
 
 def test_commit_and_reveal_are_idempotent_but_conflicts_fail() -> None:
     peer = service()
+    peer.ledger.complete_local_turn(1, 1, Role.THIEF, Role.POLICE)
     sealed = seal_turn(material(), "01" * 32)
     request = commit_request(sealed.commitment)
     assert peer.commit_turn(request).detail == "committed"
@@ -51,6 +58,7 @@ def test_commit_and_reveal_are_idempotent_but_conflicts_fail() -> None:
         peer.commit_turn(commit_request("c" * 64))
     reveal = RevealTurnRequest(
         envelope=envelope(),
+        turn_token=sealed.disclosure.turn_token,
         scent_heatmap=sealed.disclosure.scent_heatmap,
         hint=sealed.disclosure.hint,
     )
@@ -66,17 +74,23 @@ def test_reveal_before_commit_fails_and_firewall_returns_hint_only() -> None:
         peer.reveal_turn(reveal)
     evidence = peer.firewall.accept_police_reveal(reveal)
     assert evidence == ObservationEvidence(
-        "words only", reveal.scent_heatmap, None, None,
+        "words only",
+        Role.THIEF,
+        reveal.scent_heatmap,
+        None,
+        None,
     )
     assert "action" not in ObservationEvidence.__dataclass_fields__
 
 
 def test_service_final_audit_verifies_complete_record() -> None:
     peer = service()
+    peer.ledger.complete_local_turn(1, 1, Role.THIEF, Role.POLICE)
     sealed = seal_turn(material(), "01" * 32)
     peer.commit_turn(commit_request(sealed.commitment))
     reveal_request = RevealTurnRequest(
         envelope=envelope(),
+        turn_token=sealed.disclosure.turn_token,
         scent_heatmap=sealed.disclosure.scent_heatmap,
         hint=sealed.disclosure.hint,
     )
@@ -84,6 +98,7 @@ def test_service_final_audit_verifies_complete_record() -> None:
     record = AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
+            turn_token=sealed.disclosure.turn_token,
             scent_heatmap=sealed.disclosure.scent_heatmap,
             hint=sealed.disclosure.hint,
         ),
@@ -96,6 +111,7 @@ def test_service_final_audit_verifies_complete_record() -> None:
 
 def test_conflicting_reveal_fails() -> None:
     peer = service()
+    peer.ledger.complete_local_turn(1, 1, Role.THIEF, Role.POLICE)
     sealed = seal_turn(material(), "01" * 32)
     peer.commit_turn(commit_request(sealed.commitment))
     first = reveal_request(hint="first")
@@ -103,3 +119,29 @@ def test_conflicting_reveal_fails() -> None:
     changed = reveal_request(intensity=0.8, hint="first")
     with pytest.raises(ValueError, match="conflicting reveal"):
         peer.reveal_turn(changed)
+
+
+def test_turn_token_rejects_wrong_owner_and_skipped_step() -> None:
+    peer = service()
+    with pytest.raises(ValueError, match="belongs to thief"):
+        peer.commit_turn(commit_request("c" * 64))
+    sealed = seal_turn(material(role=Role.THIEF, turn_token=Role.POLICE))
+    incoming = envelope(sender=Role.THIEF)
+    peer.commit_turn(CommitTurnRequest(envelope=incoming, commitment=sealed.commitment))
+    peer.reveal_turn(
+        RevealTurnRequest(
+            envelope=incoming,
+            turn_token=Role.POLICE,
+            scent_heatmap=sealed.disclosure.scent_heatmap,
+            hint=sealed.disclosure.hint,
+        )
+    )
+    with pytest.raises(ValueError, match="belongs to police"):
+        peer.commit_turn(
+            CommitTurnRequest(
+                envelope=envelope(step=2, sender=Role.THIEF),
+                commitment="d" * 64,
+            )
+        )
+    with pytest.raises(ValueError, match="expected police step 1"):
+        peer.commit_turn(commit_request("e" * 64, step=2))

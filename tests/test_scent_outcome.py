@@ -4,7 +4,7 @@ import pytest
 
 from thief_agent.config import load_shared_config
 from thief_agent.domain.outcome import TerminalReason, evaluate_outcome, score_outcome
-from thief_agent.domain.scent import advance_scent, emission, infer_emitter
+from thief_agent.domain.scent import advance_scent, decay_scent, deposit_scent, emission
 from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Coord
 
@@ -36,10 +36,11 @@ def test_invalid_decay_is_rejected() -> None:
         advance_scent({}, Coord(0, 0), 7, 7, decay=1.1)
 
 
-def test_public_scent_transition_uniquely_locates_current_emitter() -> None:
-    previous = advance_scent({}, Coord(3, 3), 7, 7)
-    observed = advance_scent(previous, Coord(3, 4), 7, 7)
-    assert infer_emitter(previous, observed, 7, 7) == Coord(3, 4)
+def test_public_scent_is_one_turn_behind_the_private_emission() -> None:
+    private = deposit_scent({}, Coord(3, 3), 7, 7)
+    revealed = decay_scent(private)
+    assert revealed[Coord(3, 3)] == pytest.approx(0.81)
+    assert Coord(3, 4) not in decay_scent({})
 
 
 def test_capture_imprisonment_and_survival_scores() -> None:

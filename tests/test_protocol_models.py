@@ -91,6 +91,23 @@ def test_live_reveal_contains_heatmap_but_rejects_physical_action() -> None:
         RevealTurnRequest.model_validate(payload | {"action": action().model_dump(mode="json")})
 
 
+def test_first_live_reveal_accepts_empty_delayed_heatmap() -> None:
+    request = RevealTurnRequest(
+        envelope=envelope(), turn_token=Role.THIEF, scent_heatmap=(), hint="first turn",
+    )
+    assert request.scent_heatmap == ()
+
+
+def test_live_reveal_must_transfer_token_to_opponent() -> None:
+    with pytest.raises(ValidationError, match="granted to the opponent"):
+        RevealTurnRequest(
+            envelope=envelope(),
+            turn_token=Role.POLICE,
+            scent_heatmap=(ScentCell(row=0, col=0, intensity=0.9),),
+            hint="invalid",
+        )
+
+
 def test_scent_heatmap_requires_unique_row_major_cells() -> None:
     reversed_cells = (
         ScentCell(row=1, col=0, intensity=0.4),
@@ -99,6 +116,7 @@ def test_scent_heatmap_requires_unique_row_major_cells() -> None:
     with pytest.raises(ValidationError, match="row-major"):
         RevealTurnRequest(
             envelope=envelope(),
+            turn_token=Role.THIEF,
             scent_heatmap=reversed_cells,
             hint="scent only",
         )
@@ -109,6 +127,7 @@ def test_scent_heatmap_requires_unique_row_major_cells() -> None:
     with pytest.raises(ValidationError, match="unique"):
         RevealTurnRequest(
             envelope=envelope(),
+            turn_token=Role.THIEF,
             scent_heatmap=duplicate_cells,
             hint="scent only",
         )

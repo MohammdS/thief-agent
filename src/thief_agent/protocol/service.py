@@ -30,6 +30,9 @@ class ProtocolService:
     ledger: TurnLedger = field(default_factory=TurnLedger)
     firewall: AuditFirewall = field(default_factory=AuditFirewall)
     negotiation: NegotiationRequest | None = None
+    capture_claims: dict[tuple[int, int, str], CaptureClaimRequest] = field(
+        default_factory=dict,
+    )
     audit_records: dict[int, tuple[AuditRecord, ...]] = field(default_factory=dict)
     audit_results: dict[int, AuditResult] = field(default_factory=dict)
     result_proposals: dict[tuple[str, int, str], ResultProposalRequest] = field(
@@ -78,6 +81,13 @@ class ProtocolService:
     def capture_claim(self, request: CaptureClaimRequest) -> Ack:
         """Acknowledge a claim for later objective audit."""
         self._validate(request)
+        key = (
+            request.envelope.subgame, request.envelope.step, request.envelope.sender.value,
+        )
+        existing = self.capture_claims.get(key)
+        if existing is not None and existing != request:
+            raise ValueError("conflicting capture claim")
+        self.capture_claims[key] = request
         return Ack(message_id=request.envelope.message_id, accepted=True, detail="claim logged")
 
     def final_audit(self, request: FinalAuditRequest) -> AuditResult:

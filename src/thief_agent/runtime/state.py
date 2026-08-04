@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Iterable
 from typing import Literal
 
 from thief_agent.artifacts.match_log import LogRecord
@@ -37,6 +38,7 @@ def audit_record(
     return AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
+            turn_token=sealed.disclosure.turn_token,
             scent_heatmap=sealed.disclosure.scent_heatmap,
             hint=sealed.disclosure.hint,
             barrier=action.barrier if action.kind.value == "barrier" else None,
@@ -52,6 +54,19 @@ def log_record(record: AuditRecord) -> LogRecord:
         payload=record.disclosure.model_dump(mode="json", exclude={"nonce"}),
         nonce=record.disclosure.nonce,
         commit=record.reveal.commitment,
+    )
+
+
+def ordered_audits(records: Iterable[AuditRecord]) -> tuple[AuditRecord, ...]:
+    """Order the token sequence as Thief then Police for every numbered step."""
+    return tuple(
+        sorted(
+            records,
+            key=lambda item: (
+                item.disclosure.step,
+                0 if item.disclosure.role.value == "thief" else 1,
+            ),
+        )
     )
 
 

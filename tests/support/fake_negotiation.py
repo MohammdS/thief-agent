@@ -10,7 +10,10 @@ from thief_agent.protocol.messages import NegotiationRequest
 
 
 def police_proposal(
-    config: SharedConfig, police_group: str, thief_group: str, envelope: WireEnvelope,
+    config: SharedConfig,
+    police_group: str,
+    thief_group: str,
+    envelope: WireEnvelope,
 ) -> NegotiationRequest | None:
     """Return a Police-owned anchor only when its ID is coordinator-first."""
     if police_group >= thief_group:
@@ -18,7 +21,7 @@ def police_proposal(
     started_at = datetime.now(UTC).replace(microsecond=0)
     return NegotiationRequest(
         envelope=envelope,
-        contract_version="1.1",
+        contract_version="1.3",
         counted=config.counted,
         subgames=config.series.subgames,
         sender_group_id=police_group,

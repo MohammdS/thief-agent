@@ -11,11 +11,8 @@ from thief_agent.artifacts.match_log import (
 )
 from thief_agent.config import load_shared_config
 from thief_agent.crypto.commit_reveal import TurnMaterial, seal_turn
-from thief_agent.domain.board import destination
-from thief_agent.domain.scent import emission
-from thief_agent.domain.types import Coord, Move, Role
+from thief_agent.domain.types import Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
-from thief_agent.protocol.scent import encode_scent
 
 
 def replay_log() -> MatchLogArtifact:
@@ -53,15 +50,15 @@ def replay_log() -> MatchLogArtifact:
 
 
 def record(role: Role, move: Move, step: int, hint: str, nonce: str) -> LogRecord:
-    start = Coord(3, 3) if role is Role.THIEF else Coord(0, 0)
     material = TurnMaterial(
         game_id="UNCOUNTED-DEVELOPMENT",
         subgame=1,
         step=step,
         role=role,
+        turn_token=Role.POLICE if role is Role.THIEF else Role.THIEF,
         prior_state_sha256="b" * 64,
         action=TurnAction(kind=ActionKind.MOVE, move=move),
-        scent_heatmap=encode_scent(emission(destination(start, move), 7, 7)),
+        scent_heatmap=(),
         hint=hint,
         intent=HintIntent.TRUTH,
     )

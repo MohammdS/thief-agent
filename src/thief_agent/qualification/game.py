@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from thief_agent.artifacts.match_log import LogRecord
-from thief_agent.belief.model import BeliefMap, uniform_belief, update_belief
+from thief_agent.belief.model import BeliefMap, advance_delayed_belief, point_belief
 from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.commit_reveal import SealedTurn
 from thief_agent.domain.board import apply_move, place_barrier
@@ -15,6 +15,7 @@ from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Coord
 from thief_agent.orchestrator import ThiefOrchestrator
 from thief_agent.protocol.actions import ActionKind, HintIntent
+from thief_agent.protocol.scent import decode_scent
 from thief_agent.qualification.client import StubClient
 from thief_agent.qualification.models import StubTurnRequest
 from thief_agent.qualification.state import board_sha256, sealed_record
@@ -39,7 +40,7 @@ async def run_game(
 ) -> GameRun:
     """Run until capture, imprisonment, or survival without deadlock."""
     state = initial_state(config)
-    belief = uniform_belief(state.width, state.height)
+    belief = point_belief(state.width, state.height, state.police)
     scent: ScentMap = {}
     own_scent: ScentMap = {}
     records: list[LogRecord] = []
@@ -47,35 +48,50 @@ async def run_game(
     for step in range(1, config.turns.max_steps + 1):
         observation = local_observation(state, belief, scent, step)
         decision = await orchestrator.decide_turn(
-            observation, config.game_id, subgame, board_sha256(state),
+            observation,
+            config.game_id,
+            subgame,
+            board_sha256(state),
             HintIntent.BLUFF if step % 2 else HintIntent.TRUTH,
             own_scent=own_scent,
             scent_decay=config.scent.decay,
         )
-        own_scent = {
-            Coord(cell.row, cell.col): cell.intensity for cell in decision.scent_heatmap
-        }
         records.append(sealed_record(decision.sealed))
         tokens += decision.prompt_tokens + decision.completion_tokens
-        state = apply_move(state, decision.sealed.disclosure.role, decision.move)
-        outcome = evaluate_outcome(state, config)
-        if outcome:
+        state = apply_move(
+            state,
+            decision.sealed.disclosure.role,
+            decision.move,
+        ).after_full_turn()
+        own_scent = advance_scent(
+            own_scent, state.thief, state.width, state.height, config.scent.decay,
+        )
+        if state.step >= config.turns.survival_threshold:
+            outcome = score_outcome(TerminalReason.SURVIVAL, config)
             return GameRun(state, outcome, tuple(records), tokens)
-        police = await client.turn(StubTurnRequest(
-            game_id=config.game_id, subgame=subgame, step=step,
-            prior_state_sha256=board_sha256(state),
-        ))
+        police = await client.turn(
+            StubTurnRequest(
+                game_id=config.game_id,
+                subgame=subgame,
+                step=step,
+                prior_state_sha256=board_sha256(state),
+            )
+        )
         sealed = SealedTurn(police.commitment, police.disclosure)
         records.append(sealed_record(sealed))
         state = apply_police(state, sealed, config.barriers.police_capacity)
-        state = state.after_full_turn()
-        scent = advance_scent(scent, state.police, state.width, state.height, config.scent.decay)
-        belief = update_belief(belief, scent, state.barriers, sealed.disclosure.hint, 0.5)
-        outcome = evaluate_outcome(state, config)
-        if outcome:
-            return GameRun(state, outcome, tuple(records), tokens)
+        scent = decode_scent(sealed.disclosure.scent_heatmap)
+        belief = advance_delayed_belief(
+            belief, scent, state.barriers, sealed.disclosure.hint,
+        )
+        terminal = evaluate_outcome(state, config)
+        if terminal:
+            return GameRun(state, terminal, tuple(records), tokens)
     return GameRun(
-        state, score_outcome(TerminalReason.SURVIVAL, config), tuple(records), tokens,
+        state,
+        score_outcome(TerminalReason.SURVIVAL, config),
+        tuple(records),
+        tokens,
     )
 
 
@@ -90,12 +106,20 @@ def initial_state(config: SharedConfig) -> BoardState:
 
 
 def local_observation(
-    state: BoardState, belief: BeliefMap, scent: ScentMap, step: int,
+    state: BoardState,
+    belief: BeliefMap,
+    scent: ScentMap,
+    step: int,
 ) -> ThiefObservation:
     """Strip objective Police position before strategy invocation."""
     return ThiefObservation(
-        state.width, state.height, state.thief, state.barriers,
-        scent, belief.probabilities, step,
+        state.width,
+        state.height,
+        state.thief,
+        state.barriers,
+        scent,
+        belief.probabilities,
+        step,
     )
 
 

@@ -10,12 +10,18 @@ STATE_HASH = "b" * 64
 GAME_ID = "game-contract-test"
 
 
-def envelope(*, step: int = 1, subgame: int = 1, lifetime: float = 30):
+def envelope(
+    *,
+    step: int = 1,
+    subgame: int = 1,
+    lifetime: float = 30,
+    sender: Role = Role.POLICE,
+):
     return make_envelope(
         GAME_ID,
         CONFIG_HASH,
         STATE_HASH,
-        sender=Role.POLICE,
+        sender=sender,
         subgame=subgame,
         step=step,
         lifetime_seconds=lifetime,
@@ -32,6 +38,7 @@ def material(**updates: object) -> TurnMaterial:
         "subgame": 1,
         "step": 1,
         "role": Role.POLICE,
+        "turn_token": Role.THIEF,
         "prior_state_sha256": STATE_HASH,
         "action": action(),
         "scent_heatmap": (ScentCell(row=0, col=0, intensity=0.9),),
@@ -49,6 +56,7 @@ def commit_request(commitment: str, *, step: int = 1) -> CommitTurnRequest:
 def reveal_request(*, intensity: float = 0.9, hint: str = "safe hint") -> RevealTurnRequest:
     return RevealTurnRequest(
         envelope=envelope(),
+        turn_token=Role.THIEF,
         scent_heatmap=(ScentCell(row=0, col=0, intensity=intensity),),
         hint=hint,
     )

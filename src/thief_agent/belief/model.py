@@ -68,6 +68,18 @@ def predict_belief(prior: BeliefMap, blocked: frozenset[Coord]) -> BeliefMap:
     return normalize(prior.width, prior.height, predicted, blocked)
 
 
+def advance_delayed_belief(
+    prior: BeliefMap,
+    scent: Mapping[Coord, float],
+    blocked: frozenset[Coord],
+    hint: str = "",
+) -> BeliefMap:
+    """Apply the historical scent, then predict the opponent's hidden current move."""
+    historical = update_belief(prior, scent, blocked)
+    current = predict_belief(historical, blocked)
+    return update_belief(current, {}, blocked, hint)
+
+
 def update_belief(
     prior: BeliefMap,
     scent: Mapping[Coord, float],

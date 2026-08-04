@@ -8,33 +8,57 @@ from PIL import Image, ImageDraw, ImageFont
 
 from thief_agent.domain.types import Coord
 from thief_agent.replay.models import ReplayResult
-from thief_agent.ui.model import LiveSnapshot, heat_color
+from thief_agent.ui.model import (
+    BARRIER_COLOR,
+    THIEF_COLOR,
+    LiveSnapshot,
+    heat_color,
+    heat_scale,
+)
 
-CELL, MARGIN, SIDE = 62, 36, 360
+CELL, MARGIN, SIDE = 62, 36, 430
 
 
 def render_live_png(snapshot: LiveSnapshot, path: Path) -> None:
     """Render a polished local-truth screenshot without a display server."""
     image, draw = base_image(snapshot.width, snapshot.height, "THIEF PEER - LOCAL TRUTH")
+    belief_scale = heat_scale(snapshot.police_belief)
+    scent_scale = heat_scale(snapshot.police_scent)
+    draw_coordinates(draw, snapshot.width, snapshot.height)
     for row in range(snapshot.height):
         for col in range(snapshot.width):
             cell = Coord(row, col)
             fill = heat_color(
-                snapshot.police_belief.get(cell, 0), snapshot.police_scent.get(cell, 0),
+                snapshot.police_belief.get(cell, 0) / belief_scale,
+                snapshot.police_scent.get(cell, 0) / scent_scale,
             )
             draw_cell(draw, cell, fill)
             if cell in snapshot.known_barriers:
-                draw_marker(draw, cell, "#111827", "B")
-    draw_marker(draw, snapshot.thief, "#16a34a", "T")
+                draw_marker(draw, cell, BARRIER_COLOR, "B")
+    draw_marker(draw, snapshot.thief, THIEF_COLOR, "T")
     x = MARGIN + snapshot.width * CELL + 28
+    series = f"{snapshot.subgame}/{snapshot.series_size}" if snapshot.subgame else "not started"
     lines = [
+        f"Subgame: {series}",
         f"Step {snapshot.step}",
-        "THIEF TURN" if snapshot.local_turn else "WAITING FOR POLICE",
+        f"Protocol: {snapshot.protocol_state}",
+        "Turn token: LOCAL" if snapshot.local_turn else "Turn token: OPPONENT / LOCKED",
         f"Network: {snapshot.network_state}",
         f"Audit: {snapshot.audit_state}",
         f"Tokens: {snapshot.tokens_used}",
-        "", "Latest Police hint:", snapshot.latest_hint or "(silence)",
-        "", "Red: Police belief", "Blue: Police scent", "Black: known barrier",
+        "",
+        "Last protocol event:",
+        snapshot.last_event,
+        "",
+        "Latest Police hint:",
+        snapshot.latest_hint or "(silence)",
+        "",
+        "RELATIVE COLOR MAP",
+        "Red: Police belief",
+        "Blue: Police scent",
+        "Purple: overlap",
+        "Green T: local Thief",
+        "Black: known barrier",
     ]
     draw.multiline_text((x, 88), "\n".join(lines), fill="#e2e8f0", spacing=10)
     save(image, path)
@@ -50,9 +74,9 @@ def render_replay_png(result: ReplayResult, path: Path) -> None:
             for col in range(width):
                 draw_cell(draw, Coord(row, col), "#e2e8f0")
         for barrier in state.barriers:
-            draw_marker(draw, barrier, "#111827", "B")
-        draw_marker(draw, state.thief, "#16a34a", "T")
-        draw_marker(draw, state.police, "#dc2626", "P")
+            draw_marker(draw, barrier, BARRIER_COLOR, "B")
+        draw_marker(draw, state.thief, THIEF_COLOR, "T")
+        draw_marker(draw, state.police, "#f59e0b", "P", "#111827")
     x = MARGIN + width * CELL + 28
     color = "#22c55e" if result.status == "Verified OK" else "#ef4444"
     draw.text((x, 92), result.status, fill=color, font=ImageFont.load_default(size=22))
@@ -60,7 +84,8 @@ def render_replay_png(result: ReplayResult, path: Path) -> None:
         (x, 140),
         f"Verified frames: {len(result.frames)}\nFailures: {len(result.failures)}\n\n"
         + "\n".join(result.failures[:5]),
-        fill="#e2e8f0", spacing=8,
+        fill="#e2e8f0",
+        spacing=8,
     )
     save(image, path)
 
@@ -80,11 +105,25 @@ def draw_cell(draw: ImageDraw.ImageDraw, cell: Coord, fill: str) -> None:
     draw.rectangle((x0, y0, x0 + CELL, y0 + CELL), fill=fill, outline="#334155")
 
 
-def draw_marker(draw: ImageDraw.ImageDraw, cell: Coord, color: str, label: str) -> None:
+def draw_coordinates(draw: ImageDraw.ImageDraw, width: int, height: int) -> None:
+    """Label zero-based columns and rows around the evidence board."""
+    for col in range(width):
+        draw.text((MARGIN + col * CELL + 28, MARGIN + 25), str(col), fill="#94a3b8")
+    for row in range(height):
+        draw.text((MARGIN - 18, MARGIN + 66 + row * CELL), str(row), fill="#94a3b8")
+
+
+def draw_marker(
+    draw: ImageDraw.ImageDraw,
+    cell: Coord,
+    color: str,
+    label: str,
+    text_color: str = "white",
+) -> None:
     """Draw one circular labeled marker."""
     x0, y0 = MARGIN + cell.col * CELL + 12, MARGIN + 54 + cell.row * CELL
     draw.ellipse((x0, y0, x0 + CELL - 24, y0 + CELL - 24), fill=color, outline="white")
-    draw.text((x0 + 14, y0 + 11), label, fill="white")
+    draw.text((x0 + 14, y0 + 11), label, fill=text_color)
 
 
 def save(image: Image.Image, path: Path) -> None:

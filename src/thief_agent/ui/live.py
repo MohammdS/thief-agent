@@ -20,34 +20,55 @@ class LiveGui:
         width = snapshot.width * CELL_SIZE + 2 * GRID_MARGIN
         height = snapshot.height * CELL_SIZE + 2 * GRID_MARGIN
         self._canvas = tk.Canvas(
-            self._root, width=width, height=height,
-            bg="#f8fafc", highlightthickness=0,
+            self._root,
+            width=width,
+            height=height,
+            bg="#f8fafc",
+            highlightthickness=0,
         )
         self._canvas.grid(row=0, column=0, padx=18, pady=18)
         self._status = tk.Label(
-            self._root, width=38, justify="left", anchor="nw",
-            bg="#111827", fg="#e2e8f0", font=("Segoe UI", 11),
+            self._root,
+            width=45,
+            wraplength=370,
+            justify="left",
+            anchor="nw",
+            bg="#111827",
+            fg="#e2e8f0",
+            font=("Segoe UI", 11),
         )
         self._status.grid(row=0, column=1, sticky="nsew", padx=(0, 18), pady=18)
-        self._control = tk.Button(self._root, text="Local turn ready")
-        self._control.grid(row=1, column=0, columnspan=2, pady=(0, 18))
+        self._phase = tk.Label(
+            self._root,
+            font=("Segoe UI", 11, "bold"),
+            padx=16,
+            pady=8,
+            bg="#1e293b",
+            fg="#f8fafc",
+        )
+        self._phase.grid(row=1, column=0, columnspan=2, pady=(0, 18))
         self.update(snapshot)
 
     def update(self, snapshot: LiveSnapshot) -> None:
         """Refresh local board and lock controls outside the local turn."""
         draw_live_board(self._canvas, snapshot)
         self._status.configure(text=status_text(snapshot))
-        enabled = controls_enabled(snapshot)
-        self._control.configure(state=tk.NORMAL if enabled else tk.DISABLED)
+        self._phase.configure(
+            text=phase_banner(snapshot),
+            fg=phase_color(snapshot),
+        )
 
     def run(self) -> None:
         """Enter the Tk event loop."""
         self._root.mainloop()
 
     def monitor(
-        self, loader: Callable[[], LiveSnapshot | None], interval_ms: int = 250,
+        self,
+        loader: Callable[[], LiveSnapshot | None],
+        interval_ms: int = 250,
     ) -> None:
         """Poll an atomic snapshot source without blocking Tk events."""
+
         def refresh() -> None:
             snapshot = loader()
             if snapshot is not None:
@@ -59,25 +80,63 @@ class LiveGui:
 
 def status_text(snapshot: LiveSnapshot) -> str:
     """Build the live status panel from information-safe fields."""
-    turn = "THIEF TURN" if snapshot.local_turn else "WAITING FOR POLICE"
-    return "\n".join((
+    token = "LOCAL (Thief)" if snapshot.local_turn else "OPPONENT / LOCKED"
+    series = f"{snapshot.subgame}/{snapshot.series_size}" if snapshot.subgame else "not started"
+    lines = [
         "LOCAL THIEF VIEW",
         "",
+        f"Subgame: {series}",
         f"Step: {snapshot.step}",
-        f"Turn: {turn}",
+        f"Protocol: {snapshot.protocol_state}",
+        f"Turn token: {token}",
         f"Network: {snapshot.network_state}",
         f"Audit: {snapshot.audit_state}",
         f"Tokens: {snapshot.tokens_used}",
         "",
-        "Latest Police hint:",
-        snapshot.latest_hint or "(silence)",
-        "",
-        "Red = Police belief",
-        "Blue = Police scent",
-        "Black = known barrier",
-    ))
+        "Last protocol event:",
+        snapshot.last_event,
+    ]
+    if snapshot.terminal_reason:
+        lines.extend(("", f"Outcome reason: {snapshot.terminal_reason.replace('_', ' ')}"))
+    lines.extend(
+        (
+            "",
+            "Latest Police hint:",
+            snapshot.latest_hint or "(silence)",
+            "",
+            "RELATIVE COLOR MAP",
+            "Red = Police belief intensity",
+            "Blue = Police scent intensity",
+            "Purple = belief and scent overlap",
+            "Green T = local Thief position",
+            "Black = known barrier",
+        )
+    )
+    return "\n".join(lines)
 
 
 def controls_enabled(snapshot: LiveSnapshot) -> bool:
     """Enable controls only during a non-terminal local turn."""
     return snapshot.local_turn and snapshot.audit_state not in {"Verified OK", "TAMPERED"}
+
+
+def phase_banner(snapshot: LiveSnapshot) -> str:
+    """Summarize the current autonomous phase below the board."""
+    if snapshot.audit_state == "Verified OK":
+        return "FINISHED - FINAL AUDIT VERIFIED"
+    if snapshot.audit_state == "TAMPERED":
+        return "STOPPED - AUDIT TAMPER DETECTED"
+    if snapshot.audit_state == "in progress":
+        return "PLAY STOPPED - FINAL AUDIT IN PROGRESS"
+    return "AUTONOMOUS THIEF TURN" if snapshot.local_turn else "WAITING FOR POLICE TOKEN"
+
+
+def phase_color(snapshot: LiveSnapshot) -> str:
+    """Color the phase banner without reusing heatmap colors."""
+    if snapshot.audit_state == "Verified OK":
+        return "#22c55e"
+    if snapshot.audit_state == "TAMPERED":
+        return "#f87171"
+    if snapshot.audit_state == "in progress":
+        return "#fbbf24"
+    return "#f8fafc"

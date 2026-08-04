@@ -7,7 +7,7 @@ import hmac
 import secrets
 from dataclasses import dataclass
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from thief_agent.config.loader import canonical_json_bytes
 from thief_agent.config.models import StrictModel
@@ -24,6 +24,7 @@ class TurnMaterial(StrictModel):
     subgame: int = Field(ge=1)
     step: int = Field(ge=0)
     role: Role
+    turn_token: Role
     prior_state_sha256: str = Field(pattern=HASH_PATTERN)
     action: TurnAction
     scent_heatmap: ScentHeatmap
@@ -31,6 +32,13 @@ class TurnMaterial(StrictModel):
     intent: HintIntent
 
     _canonical_heatmap = field_validator("scent_heatmap")(validate_heatmap)
+
+    @model_validator(mode="after")
+    def require_opponent_token(self) -> TurnMaterial:
+        """Require every sealed turn to hand play to the other role."""
+        if self.turn_token is self.role:
+            raise ValueError("turn token must be granted to the opponent")
+        return self
 
 
 class TurnDisclosure(TurnMaterial):

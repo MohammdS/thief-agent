@@ -31,10 +31,10 @@ The interaction is treated as a two-agent, finite-horizon Dec-POMDP:
   geometry and the public protocol state.
 - Thief actions are `N/S/E/W/STAY`; Police actions are movement or permanent barrier
   placement. Python validates all physical actions.
-- The Thief observation contains its position, public barriers, the observed 5x5 Police
-  scent field, grounded hints, protocol state, and a Police-location belief inferred from
-  the complete public deterministic scent transition. It
-  does not contain objective Police movement or position.
+- The Thief observation contains its position, public barriers, the delayed accumulated
+  Police scent trail, grounded hints, protocol state, and a Police-location belief. The
+  trail covers Police's previous action after 0.1 decay, not its just-committed action, so
+  the observation does not contain objective current Police movement or position.
 - Physical transitions are deterministic once both legal actions are fixed. Observation
   uncertainty comes from partial sensing and non-binding truth/bluff language.
 - Terminal utility is loaded from the hash-locked shared configuration: capture gives
@@ -98,9 +98,10 @@ uv run thief-agent peer --config config/game.secret.toml --game-config config/ga
 ```
 
 The command runs the FastMCP server and outbound client loop concurrently. Both peers lock
-the same series anchor, commit before either reveal, exchange only scent heatmaps and hints
-during live play, run every configured subgame, then exchange hidden actions, nonces, and
-result hashes. It writes validated config/log/result artifacts under
+the same series anchor and alternate `Commit -> Acknowledge -> Reveal` turns. Live reveals
+exchange only hints and the pre-action accumulated scent trail after decay; the current
+emission stays private until that role's next turn. After every configured subgame, peers
+exchange hidden actions, nonces, and result hashes. It writes validated artifacts under
 `artifacts/matches/`. It listens on the configured host/port at `/mcp`. A counted series
 also requires `--declaration PATH` so the pre-agreed declaration is preserved. Public
 exposure and setup are documented in the [network runbook](docs/public-network-runbook.md).
@@ -112,8 +113,9 @@ uv run thief-agent gui --config config/game.json `
   --state artifacts/matches/runtime/live.json
 ```
 
-The atomic snapshot contains local Thief truth, public barriers, received Police
-scent/hint, belief, token, network, and audit status—never objective Police position.
+The atomic snapshot contains local Thief truth, public barriers, independently normalized
+scent and belief layers, subgame/step, token owner, latest protocol event, capture reason,
+network, and final-audit status—never objective Police position.
 
 ## Replay and reporting
 
@@ -124,9 +126,10 @@ uv run thief-agent report artifacts/qualification/result_UNCOUNTED-DEVELOPMENT.j
   --mode dry-run --state-dir artifacts/reporting/runtime
 ```
 
-Live `reveal_turn` payloads contain no action or movement field. Replay reveals objective
-Police state only after whole-log hash, per-turn commitments, scent histories, and physical
-transitions verify as `Verified OK`; altered, deleted, or reordered material is
+Live `reveal_turn` payloads contain no action or movement field, and the first heatmap from
+each role is empty. Replay reveals objective Police state only after whole-log hash,
+per-turn commitments, delayed scent histories, and physical transitions verify as
+`Verified OK`; altered, deleted, or reordered material is
 `TAMPERED`. Reporting defaults to validation. Dry-run writes a MIME checkpoint without
 OAuth. Live delivery must be explicitly selected and is protected by send-only OAuth,
 fixed recipient, deadlines, retries, quota, token bucket, duplicate suppression, and a

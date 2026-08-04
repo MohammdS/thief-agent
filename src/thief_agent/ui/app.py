@@ -16,8 +16,22 @@ def run_live_gui(config_path: Path, state_path: Path) -> None:
     config = load_shared_config(config_path)
     start = config.board.thief_start
     initial = LiveSnapshot(
-        config.board.width, config.board.height, Coord(start.row, start.col),
-        frozenset(), {}, {}, 0, "", 0, "waiting for peer", "pending", False,
+        config.board.width,
+        config.board.height,
+        Coord(start.row, start.col),
+        frozenset(),
+        {},
+        {},
+        0,
+        "",
+        0,
+        "waiting for peer",
+        "pending",
+        False,
+        0,
+        config.series.subgames,
+        "Waiting for peer",
+        "No protocol event yet",
     )
     gui, store = LiveGui(initial), LiveSnapshotStore(state_path)
     gui.monitor(store.read)

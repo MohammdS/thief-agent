@@ -9,6 +9,7 @@ import pytest
 from tests.protocol_helpers import CONFIG_HASH, GAME_ID, envelope, material
 from thief_agent.crypto.audit import AuditRecord, FinalAuditRequest, RevealedTurn
 from thief_agent.crypto.commit_reveal import seal_turn
+from thief_agent.domain.types import Role
 from thief_agent.network.client import PeerClient
 from thief_agent.protocol.messages import (
     CommitTurnRequest,
@@ -67,9 +68,10 @@ async def wait_for_health(port: int):
 
 async def exercise_turn_contract(port: int) -> None:
     client = PeerClient(f"http://127.0.0.1:{port}/mcp", timeout_seconds=2)
+    incoming = envelope(sender=Role.THIEF)
     negotiation = NegotiationRequest(
-        envelope=envelope(step=0, subgame=0),
-        contract_version="1.1",
+        envelope=envelope(step=0, subgame=0, sender=Role.THIEF),
+        contract_version="1.3",
         counted=False,
         subgames=1,
         sender_group_id="police-group",
@@ -77,30 +79,44 @@ async def exercise_turn_contract(port: int) -> None:
         series_started_at=datetime.now(UTC),
     )
     assert (await client.negotiate(negotiation)).accepted
-    sealed = seal_turn(material())
-    assert (await client.commit_turn(CommitTurnRequest(
-        envelope=envelope(), commitment=sealed.commitment,
-    ))).accepted
+    sealed = seal_turn(material(role=Role.THIEF, turn_token=Role.POLICE))
+    assert (
+        await client.commit_turn(
+            CommitTurnRequest(
+                envelope=incoming,
+                commitment=sealed.commitment,
+            )
+        )
+    ).accepted
     disclosure = sealed.disclosure
-    assert (await client.reveal_turn(RevealTurnRequest(
-        envelope=envelope(),
-        scent_heatmap=disclosure.scent_heatmap,
-        hint=disclosure.hint,
-    ))).accepted
+    assert (
+        await client.reveal_turn(
+            RevealTurnRequest(
+                envelope=incoming,
+                turn_token=disclosure.turn_token,
+                scent_heatmap=disclosure.scent_heatmap,
+                hint=disclosure.hint,
+            )
+        )
+    ).accepted
     record = AuditRecord(
         reveal=RevealedTurn(
             commitment=sealed.commitment,
+            turn_token=disclosure.turn_token,
             scent_heatmap=disclosure.scent_heatmap,
             hint=disclosure.hint,
         ),
         disclosure=disclosure,
     )
-    audit = await client.final_audit(FinalAuditRequest(
-        envelope=envelope(), records=(record,),
-    ))
+    audit = await client.final_audit(
+        FinalAuditRequest(
+            envelope=incoming,
+            records=(record,),
+        )
+    )
     assert audit.status == "Verified OK"
     proposal = ResultProposalRequest(
-        envelope=envelope(),
+        envelope=incoming,
         phase="subgame",
         sender_group_id="police-group",
         result_sha256="c" * 64,

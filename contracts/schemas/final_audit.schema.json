@@ -116,13 +116,16 @@
           "items": {
             "$ref": "#/$defs/ScentCell"
           },
-          "minItems": 1,
           "title": "Scent Heatmap",
           "type": "array"
+        },
+        "turn_token": {
+          "$ref": "#/$defs/Role"
         }
       },
       "required": [
         "commitment",
+        "turn_token",
         "scent_heatmap",
         "hint"
       ],
@@ -239,7 +242,6 @@
           "items": {
             "$ref": "#/$defs/ScentCell"
           },
-          "minItems": 1,
           "title": "Scent Heatmap",
           "type": "array"
         },
@@ -252,6 +254,9 @@
           "minimum": 1,
           "title": "Subgame",
           "type": "integer"
+        },
+        "turn_token": {
+          "$ref": "#/$defs/Role"
         }
       },
       "required": [
@@ -259,6 +264,7 @@
         "subgame",
         "step",
         "role",
+        "turn_token",
         "prior_state_sha256",
         "action",
         "scent_heatmap",

@@ -1,6 +1,6 @@
 {
-  "canonical_json": "{\"action\":{\"barrier\":null,\"kind\":\"move\",\"move\":\"N\"},\"game_id\":\"vector-game\",\"hint\":\"The southern road feels safer\",\"intent\":\"bluff\",\"nonce\":\"0101010101010101010101010101010101010101010101010101010101010101\",\"prior_state_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"role\":\"thief\",\"scent_heatmap\":[{\"col\":3,\"intensity\":0.9,\"row\":2}],\"step\":7,\"subgame\":1}",
-  "commitment_sha256": "27ce7aeeb0c86a878cd5f326ee5615ac9d60ce8ade72bf925df50e14b514e3de",
+  "canonical_json": "{\"action\":{\"barrier\":null,\"kind\":\"move\",\"move\":\"N\"},\"game_id\":\"vector-game\",\"hint\":\"The southern road feels safer\",\"intent\":\"bluff\",\"nonce\":\"0101010101010101010101010101010101010101010101010101010101010101\",\"prior_state_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"role\":\"thief\",\"scent_heatmap\":[{\"col\":3,\"intensity\":0.9,\"row\":2}],\"step\":7,\"subgame\":1,\"turn_token\":\"police\"}",
+  "commitment_sha256": "4693981fac3266846406b953edf4be9bf2b057133574189525117e715286a2e4",
   "disclosure": {
     "action": {"barrier": null, "kind": "move", "move": "N"},
     "game_id": "vector-game",
@@ -13,6 +13,7 @@
       {"row": 2, "col": 3, "intensity": 0.9}
     ],
     "step": 7,
-    "subgame": 1
+    "subgame": 1,
+    "turn_token": "police"
   }
 }

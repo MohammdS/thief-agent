@@ -8,7 +8,7 @@ placeholder-aware submission structure check. Live Ollama is opt-in so CI remain
 deterministic; its strict fallback path is covered with mocked provider failures.
 
 `test_peer_runtime.py` drives the complete autonomous Thief loop through a reciprocal
-Police transport: health, coordinator negotiation, 35 simultaneous commit/reveal steps,
+Police transport: health, coordinator negotiation, 35 ping-pong token-gated steps,
 scent-only live reveals, final action/nonce audits, action-derived heatmap verification,
 subgame digest agreement, final artifact hash agreement, persistence, and verified replay.
 Privacy tests reject live `action`/`move` fields and non-canonical heatmaps. A

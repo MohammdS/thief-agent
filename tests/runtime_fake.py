@@ -6,7 +6,7 @@ from tests.support.fake_negotiation import police_proposal
 from thief_agent.config import SharedConfig, config_sha256
 from thief_agent.crypto.audit import AuditResult, FinalAuditRequest, verify_audit
 from thief_agent.crypto.commit_reveal import SealedTurn, TurnMaterial, seal_turn
-from thief_agent.domain.scent import ScentMap, advance_scent
+from thief_agent.domain.scent import ScentMap, decay_scent, deposit_scent
 from thief_agent.domain.types import Coord, Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
 from thief_agent.protocol.envelope import WireEnvelope, make_envelope
@@ -34,6 +34,7 @@ class FakePoliceTransport:
         self.sealed: dict[tuple[int, int], SealedTurn] = {}
         self.scents: dict[int, ScentMap] = {}
         self.thief_reveals: list[RevealTurnRequest] = []
+        self.events: list[tuple[str, int]] = []
 
     async def health(self, request: HealthRequest) -> HealthResponse:
         """Return an independently typed Police identity."""
@@ -51,55 +52,60 @@ class FakePoliceTransport:
         """Accept the coordinator anchor and send the matching callback."""
         mirrored = request.model_copy(update={
             "envelope": self._envelope(request.envelope.prior_state_sha256, 0, 0),
-            "sender_group_id": self.opponent_group})
+            "sender_group_id": self.opponent_group,
+        })
         self.service.negotiate(mirrored)
         return self._ack(request, "accepted")
 
     async def commit_turn(self, request: CommitTurnRequest) -> Ack:
-        """Create and callback one independently sealed Police commitment."""
+        """Acknowledge a Thief commitment without acting before its reveal."""
+        self.events.append(("thief_commit", request.envelope.step))
+        return self._ack(request, "committed")
+
+    def _emit_police(self, request: RevealTurnRequest) -> None:
+        """Take one Police turn only after the Thief transfers the token."""
         envelope = request.envelope
         previous = self.scents.get(envelope.subgame, {})
         start = Coord(self.config.board.police_start.row, self.config.board.police_start.col)
-        next_scent = advance_scent(
-            previous, start, self.config.board.width,
-            self.config.board.height, self.config.scent.decay,
+        public_scent = decay_scent(previous, self.config.scent.decay)
+        self.scents[envelope.subgame] = deposit_scent(
+            public_scent, start, self.config.board.width,
+            self.config.board.height,
         )
-        self.scents[envelope.subgame] = next_scent
         material = TurnMaterial(
-            game_id=envelope.game_id,
-            subgame=envelope.subgame,
-            step=envelope.step,
-            role=Role.POLICE,
+            game_id=envelope.game_id, subgame=envelope.subgame, step=envelope.step,
+            role=Role.POLICE, turn_token=Role.THIEF,
             prior_state_sha256=envelope.prior_state_sha256,
             action=TurnAction(kind=ActionKind.MOVE, move=Move.STAY),
-            scent_heatmap=encode_scent(next_scent),
+            scent_heatmap=encode_scent(public_scent),
             hint="I stayed still and watched",
             intent=HintIntent.TRUTH,
         )
         sealed = seal_turn(material)
         self.sealed[(envelope.subgame, envelope.step)] = sealed
+        self.events.append(("police_commit", envelope.step))
         incoming = CommitTurnRequest(
+            envelope=self._envelope(envelope.prior_state_sha256, envelope.subgame,
+                                    envelope.step), commitment=sealed.commitment,
+        )
+        self.service.commit_turn(incoming)
+        disclosure = sealed.disclosure
+        self.events.append(("police_reveal", envelope.step))
+        self.service.reveal_turn(RevealTurnRequest(
             envelope=self._envelope(
                 envelope.prior_state_sha256, envelope.subgame, envelope.step,
             ),
-            commitment=sealed.commitment,
-        )
-        self.service.commit_turn(incoming)
-        return self._ack(request, "committed")
-
-    async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
-        """Callback the matching Police immediate reveal."""
-        self.thief_reveals.append(request)
-        envelope = request.envelope
-        sealed = self.sealed[(envelope.subgame, envelope.step)]
-        disclosure = sealed.disclosure
-        incoming = RevealTurnRequest(
-            envelope=self._envelope(envelope.prior_state_sha256,
-                                    envelope.subgame, envelope.step),
+            turn_token=disclosure.turn_token,
             scent_heatmap=disclosure.scent_heatmap,
             hint=disclosure.hint,
-        )
-        self.service.reveal_turn(incoming)
+        ))
+
+    async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
+        """Accept the Thief handoff, then generate one Police response."""
+        self.thief_reveals.append(request)
+        self.events.append(("thief_reveal", request.envelope.step))
+        if request.envelope.step < self.config.turns.survival_threshold:
+            self._emit_police(request)
         return self._ack(request, "revealed")
 
     async def final_audit(self, request: FinalAuditRequest) -> AuditResult:
@@ -111,9 +117,8 @@ class FakePoliceTransport:
             if game == subgame
         )
         incoming = FinalAuditRequest(
-            envelope=self._envelope(request.envelope.prior_state_sha256,
-                                    subgame, request.envelope.step),
-            records=records,
+            envelope=self._envelope(request.envelope.prior_state_sha256, subgame,
+                                    request.envelope.step), records=records,
         )
         self.service.final_audit(incoming)
         return verify_audit(request.records)
@@ -123,12 +128,10 @@ class FakePoliceTransport:
         mirrored = request.model_copy(update={
             "envelope": self._envelope(
                 request.envelope.prior_state_sha256,
-                request.envelope.subgame,
-                request.envelope.step,
+                request.envelope.subgame, request.envelope.step,
             ),
             "sender_group_id": self.opponent_group,
-            "tokens_total": 0,
-            "git_commit": "0" * 40,
+            "tokens_total": 0, "git_commit": "0" * 40,
         })
         self.service.propose_result(mirrored)
         return self._ack(request, "result logged")
@@ -136,12 +139,8 @@ class FakePoliceTransport:
     def _envelope(self, state_hash: str, subgame: int, step: int) -> WireEnvelope:
         """Build fresh Police-originated metadata."""
         return make_envelope(
-            self.config.game_id,
-            config_sha256(self.config),
-            state_hash,
-            sender=Role.POLICE,
-            subgame=subgame,
-            step=step,
+            self.config.game_id, config_sha256(self.config), state_hash,
+            sender=Role.POLICE, subgame=subgame, step=step,
         )
 
     @staticmethod

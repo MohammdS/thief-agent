@@ -19,7 +19,7 @@ class ScentCell(StrictModel):
     intensity: float = Field(ge=0, allow_inf_nan=False)
 
 
-ScentHeatmap = Annotated[tuple[ScentCell, ...], Field(min_length=1)]
+ScentHeatmap = Annotated[tuple[ScentCell, ...], Field()]
 
 
 def encode_scent(values: Mapping[Coord, float]) -> tuple[ScentCell, ...]:

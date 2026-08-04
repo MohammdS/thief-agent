@@ -42,12 +42,26 @@ MATCH_TRANSITIONS = {
     MatchState.REPORTING: {MatchState.FINISHED, MatchState.ABORTED},
 }
 TURN_TRANSITIONS = {
-    TurnState.WAITING_FOR_OPPONENT: {TurnState.COMPUTING_MOVE, TurnState.TECHNICAL_LOSS},
+    TurnState.WAITING_FOR_OPPONENT: {
+        TurnState.COMPUTING_MOVE,
+        TurnState.AWAITING_REVEAL,
+        TurnState.TECHNICAL_LOSS,
+    },
     TurnState.COMPUTING_MOVE: {TurnState.COMMITTING, TurnState.TECHNICAL_LOSS},
-    TurnState.COMMITTING: {TurnState.AWAITING_REVEAL, TurnState.TECHNICAL_LOSS},
+    TurnState.COMMITTING: {
+        TurnState.AWAITING_REVEAL,
+        TurnState.COMPLETE,
+        TurnState.TECHNICAL_LOSS,
+    },
     TurnState.AWAITING_REVEAL: {TurnState.VERIFYING, TurnState.TECHNICAL_LOSS},
-    TurnState.VERIFYING: {TurnState.COMPLETE, TurnState.TECHNICAL_LOSS},
+    TurnState.VERIFYING: {
+        TurnState.COMPUTING_MOVE,
+        TurnState.COMPLETE,
+        TurnState.TECHNICAL_LOSS,
+    },
 }
+
+
 @dataclass(slots=True)
 class StateMachine[StateT: (MatchState, TurnState)]:
     """Reject any transition absent from an explicit table."""

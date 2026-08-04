@@ -19,13 +19,22 @@ def test_commitment_is_stable_for_fixed_nonce_and_fresh_by_default() -> None:
 
 @pytest.mark.parametrize(
     "field",
-    ["action", "scent_heatmap", "hint", "intent", "prior_state_sha256", "nonce"],
+    [
+        "action",
+        "turn_token",
+        "scent_heatmap",
+        "hint",
+        "intent",
+        "prior_state_sha256",
+        "nonce",
+    ],
 )
 def test_every_bound_field_detects_tampering(field: str) -> None:
     sealed = seal_turn(material(), FIXED_NONCE)
     values = sealed.disclosure.model_dump(mode="python")
     replacements = {
         "action": action(Move.NORTH),
+        "turn_token": Role.POLICE,
         "scent_heatmap": (ScentCell(row=0, col=0, intensity=0.8),),
         "hint": "altered hint",
         "intent": "bluff",
@@ -33,7 +42,11 @@ def test_every_bound_field_detects_tampering(field: str) -> None:
         "nonce": "02" * 32,
     }
     values[field] = replacements[field]
-    altered = TurnDisclosure.model_validate(values)
+    altered = (
+        sealed.disclosure.model_copy(update={"turn_token": Role.POLICE})
+        if field == "turn_token"
+        else TurnDisclosure.model_validate(values)
+    )
     assert not verify_commitment(sealed.commitment, altered)
 
 
@@ -41,6 +54,7 @@ def test_final_audit_checks_hash_action_and_hint() -> None:
     sealed = seal_turn(material(), FIXED_NONCE)
     reveal = RevealedTurn(
         commitment=sealed.commitment,
+        turn_token=sealed.disclosure.turn_token,
         scent_heatmap=sealed.disclosure.scent_heatmap,
         hint=sealed.disclosure.hint,
     )

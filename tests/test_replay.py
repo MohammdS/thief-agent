@@ -23,9 +23,11 @@ def test_valid_final_disclosures_reconstruct_verified_replay() -> None:
 
 def test_altered_payload_is_tampered() -> None:
     log = replay_log()
-    changed = log.records[0].model_copy(update={
-        "payload": log.records[0].payload | {"hint": "altered"},
-    })
+    changed = log.records[0].model_copy(
+        update={
+            "payload": log.records[0].payload | {"hint": "altered"},
+        }
+    )
     tampered = log.model_copy(update={"records": (changed, *log.records[1:])})
     result = verifier().verify(tampered)
     assert result.status == "TAMPERED"
@@ -34,7 +36,10 @@ def test_altered_payload_is_tampered() -> None:
 
 def test_hash_valid_but_physically_illegal_move_is_tampered() -> None:
     illegal = record(Role.POLICE, Move.NORTH, 1, "north", "03" * 32)
-    log: MatchLogArtifact = replay_log().model_copy(update={"records": (illegal,)})
+    valid_thief = replay_log().records[0]
+    log: MatchLogArtifact = replay_log().model_copy(
+        update={"records": (valid_thief, illegal)},
+    )
     result = verifier().verify(log)
     assert result.status == "TAMPERED"
     assert any("illegal police move" in failure for failure in result.failures)
@@ -62,9 +67,11 @@ def test_hash_valid_but_action_inconsistent_scent_is_tampered() -> None:
         commit=sealed.commitment,
     )
     tampered = log.model_copy(update={"records": (changed, *log.records[1:])})
-    tampered = tampered.model_copy(update={
-        "mutual_agreement": MutualAgreement(sha256=log_sha256(tampered), confirmed=True),
-    })
+    tampered = tampered.model_copy(
+        update={
+            "mutual_agreement": MutualAgreement(sha256=log_sha256(tampered), confirmed=True),
+        }
+    )
     result = verifier().verify(tampered)
     assert result.status == "TAMPERED"
     assert any("scent heatmap" in failure for failure in result.failures)

@@ -10,7 +10,7 @@ from fastmcp import FastMCP
 from thief_agent.config.models import PointConfig
 from thief_agent.crypto.commit_reveal import TurnMaterial, seal_turn
 from thief_agent.domain.board import destination
-from thief_agent.domain.scent import ScentMap, advance_scent
+from thief_agent.domain.scent import ScentMap, decay_scent, deposit_scent
 from thief_agent.domain.types import Coord, Move, Role
 from thief_agent.protocol.actions import ActionKind, HintIntent, TurnAction
 from thief_agent.protocol.scent import encode_scent
@@ -39,17 +39,19 @@ def build_stub() -> FastMCP:
         if request.step == 1:
             states[request.subgame] = StubState()
         state = states.setdefault(request.subgame, StubState())
+        public_scent = decay_scent(state.scent, 0.10)
         action = choose_action(state, request.step)
-        state.scent = advance_scent(state.scent, state.position, 7, 7, 0.10)
+        state.scent = deposit_scent(public_scent, state.position, 7, 7)
         hint = hint_for(action)
         material = TurnMaterial(
             game_id=request.game_id,
             subgame=request.subgame,
             step=request.step,
             role=Role.POLICE,
+            turn_token=Role.THIEF,
             prior_state_sha256=request.prior_state_sha256,
             action=action,
-            scent_heatmap=encode_scent(state.scent),
+            scent_heatmap=encode_scent(public_scent),
             hint=hint,
             intent=HintIntent.TRUTH if request.step % 3 else HintIntent.BLUFF,
         )
@@ -85,8 +87,11 @@ def hint_for(action: TurnAction) -> str:
     if action.kind is ActionKind.BARRIER:
         return "I placed a barrier on my current block"
     words = {
-        Move.NORTH: "north", Move.SOUTH: "south", Move.EAST: "east",
-        Move.WEST: "west", Move.STAY: "still",
+        Move.NORTH: "north",
+        Move.SOUTH: "south",
+        Move.EAST: "east",
+        Move.WEST: "west",
+        Move.STAY: "still",
     }
     return f"I moved {words[action.move]} along the open street"
 
@@ -97,8 +102,11 @@ def main() -> int:
     parser.add_argument("--port", type=int, required=True)
     args = parser.parse_args()
     build_stub().run(
-        transport="http", host="127.0.0.1", port=args.port,
-        path="/mcp", show_banner=False,
+        transport="http",
+        host="127.0.0.1",
+        port=args.port,
+        path="/mcp",
+        show_banner=False,
     )
     return 0
 

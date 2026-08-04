@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from thief_agent.crypto.audit import AuditResult, FinalAuditRequest
 from thief_agent.protocol.messages import (
     Ack,
+    CaptureClaimRequest,
     CommitTurnRequest,
     HealthRequest,
     HealthResponse,
@@ -44,8 +45,12 @@ class PeerClient:
         return await self._call("commit_turn", request, Ack)
 
     async def reveal_turn(self, request: RevealTurnRequest) -> Ack:
-        """Reveal scent and hint after both commitments are locked."""
+        """Reveal public evidence and transfer the turn token."""
         return await self._call("reveal_turn", request, Ack)
+
+    async def capture_claim(self, request: CaptureClaimRequest) -> Ack:
+        """Publish one provisional public capture claim."""
+        return await self._call("capture_claim", request, Ack)
 
     async def final_audit(self, request: FinalAuditRequest) -> AuditResult:
         """Disclose final turn secrets and parse the peer audit."""

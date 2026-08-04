@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from thief_agent.config.models import PointConfig, StrictModel
 from thief_agent.domain.types import Role
@@ -25,7 +25,7 @@ class HealthResponse(StrictModel):
 
     status: Literal["ok"] = "ok"
     role: Role = Role.THIEF
-    protocol_version: Literal["1.1"] = "1.1"
+    protocol_version: Literal["1.3"] = "1.3"
     config_sha256: str = Field(pattern=HASH_PATTERN)
 
 
@@ -33,7 +33,7 @@ class NegotiationRequest(StrictModel):
     """Propose the locked contract and series parameters."""
 
     envelope: WireEnvelope
-    contract_version: Literal["1.1"]
+    contract_version: Literal["1.3"]
     counted: bool
     subgames: int = Field(ge=1)
     sender_group_id: str = Field(min_length=1)
@@ -65,15 +65,23 @@ class CommitTurnRequest(StrictModel):
 
 
 class RevealTurnRequest(StrictModel):
-    """Reveal observable scent and hint while withholding the physical action."""
+    """Reveal observations and transfer the turn while withholding the action."""
 
     envelope: WireEnvelope
+    turn_token: Role
     scent_heatmap: ScentHeatmap
     hint: str = Field(max_length=500)
     barrier: PointConfig | None = None
     capture_claim: Literal["overlap", "barrier", "imprisonment"] | None = None
 
     _canonical_heatmap = field_validator("scent_heatmap")(validate_heatmap)
+
+    @model_validator(mode="after")
+    def require_opponent_token(self) -> RevealTurnRequest:
+        """Require the sender to hand the token to the opposite role."""
+        if self.turn_token is self.envelope.sender:
+            raise ValueError("turn token must be granted to the opponent")
+        return self
 
 
 class CaptureClaimRequest(StrictModel):
