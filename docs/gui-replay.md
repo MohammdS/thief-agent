@@ -11,9 +11,11 @@ It has no field for objective Police position or movement. A public barrier or
 imprisonment capture is claimed before the terminal snapshot is written, so the monitor
 can safely show the claim, final-audit transition, verified reason, and score.
 
-Each heat layer is normalized against its own current peak so accumulated scent cannot
-wash out the probability layer. Red is relative Police belief, blue is relative Police
-scent, purple is overlap, green `T` is the local Thief, and black is a public barrier.
+The live canvas defaults to the final Police belief map: red is relative posterior belief
+after scent, hint, movement prediction, and barrier filtering. The `Show scent overlay`
+toggle optionally adds the raw received Police scent in blue; purple marks overlap. Green
+`T` is the local Thief, and black is a public barrier. Each optional scent layer is
+normalized against its own current peak so accumulated scent cannot wash out belief.
 The row and column labels use the game's top-left, zero-based coordinates.
 
 ![Thief local-truth GUI](screenshots/thief-live-local-truth.png)

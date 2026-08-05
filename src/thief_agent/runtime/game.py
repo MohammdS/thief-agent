@@ -10,6 +10,7 @@ from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditRecord
 from thief_agent.domain.scent import ScentMap, advance_scent
 from thief_agent.domain.types import Coord, Role
+from thief_agent.language.profile import TruthProfile
 from thief_agent.orchestrator import ThiefOrchestrator
 from thief_agent.protocol.actions import HintIntent
 from thief_agent.protocol.machine import TurnState, turn_machine
@@ -36,6 +37,7 @@ async def run_peer_game(
     gate: ExternalGatekeeper, groups: tuple[str, str], git_commit: str,
     started_at: datetime, max_words: int,
     publisher: LiveSnapshotStore | None = None,
+    hint_profile: TruthProfile | None = None,
 ) -> PeerGameRun:
     """Use the initial token, then wait for each Police handoff before acting."""
     state = live_state.initial_state(config)
@@ -46,6 +48,7 @@ async def run_peer_game(
     recent: list[Coord] = []
     tokens = 0
     presenter = LivePresenter(publisher, subgame, config.series.subgames)
+    profile = hint_profile or TruthProfile()
     for step in range(1, config.turns.max_steps + 1):
         turn = turn_machine()
         turn.transition(TurnState.COMPUTING_MOVE)
@@ -100,6 +103,7 @@ async def run_peer_game(
         police_scent = observed_scent
         belief = advance_delayed_belief(
             belief, observed_scent, state.barriers, police.hint,
+            truth_probability=profile.probability,
         )
         capture_reason = await claim_public_capture(
             config, subgame, step, state, police.commitment, client, gate,
@@ -114,7 +118,7 @@ async def run_peer_game(
         turn.transition(TurnState.COMPLETE)
     final = await finalize_game(
         config, subgame, state, tuple(own_audits), tokens, service, client, gate,
-        groups, git_commit,
+        groups, git_commit, opponent_profile=profile,
     )
     presenter.finished(final.state, police_scent, belief, tokens, final.outcome)
     return PeerGameRun(

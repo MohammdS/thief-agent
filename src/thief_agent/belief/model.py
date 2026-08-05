@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from math import pow
 
 from thief_agent.domain.types import Coord
+
+MIN_HINT_STRENGTH = 0.25
+MAX_HINT_STRENGTH = 1.5
+SCENT_HINT_CONFIDENCE = 0.4
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,11 +78,19 @@ def advance_delayed_belief(
     scent: Mapping[Coord, float],
     blocked: frozenset[Coord],
     hint: str = "",
+    truth_probability: float = 0.5,
 ) -> BeliefMap:
-    """Apply the historical scent, then predict the opponent's hidden current move."""
+    """Apply delayed scent, predict movement, and compare the incoming hint."""
+    direction = parse_direction(hint)
+    scent_alignment = hint_scent_alignment(
+        scent, prior.width, prior.height, direction,
+    )
     historical = update_belief(prior, scent, blocked)
     current = predict_belief(historical, blocked)
-    return update_belief(current, {}, blocked, hint)
+    return update_belief(
+        current, {}, blocked, hint, truth_probability=truth_probability,
+        scent_alignment=scent_alignment,
+    )
 
 
 def update_belief(
@@ -86,24 +99,35 @@ def update_belief(
     blocked: frozenset[Coord],
     hint: str = "",
     truth_probability: float = 0.5,
+    scent_alignment: float | None = None,
 ) -> BeliefMap:
-    """Apply scent likelihood and optional directional hint evidence."""
+    """Apply scent evidence and adapt hint strength to scent consistency."""
     if not 0 <= truth_probability <= 1:
         raise ValueError("truth probability must lie in [0, 1]")
     direction = parse_direction(hint)
+    alignment = (
+        hint_scent_alignment(scent, prior.width, prior.height, direction)
+        if scent_alignment is None else scent_alignment
+    )
+    hint_strength = hint_integration_strength(alignment)
+    effective_truth_probability = adjusted_truth_probability(
+        truth_probability, alignment,
+    )
     weights: dict[Coord, float] = {}
     max_scent = max(scent.values(), default=0.0)
     for cell, probability in prior.probabilities.items():
         if cell in blocked:
             continue
         scent_likelihood = 1.0 if max_scent == 0 else 0.05 + scent.get(cell, 0.0) / max_scent
-        hint_likelihood = direction_likelihood(cell, prior, direction, truth_probability)
+        hint_likelihood = direction_likelihood(
+            cell, prior, direction, effective_truth_probability, hint_strength,
+        )
         weights[cell] = probability * scent_likelihood * hint_likelihood
     return normalize(prior.width, prior.height, weights, blocked)
 
 
-def parse_direction(hint: str) -> str | None:
-    """Extract one explicit cardinal cue from natural language."""
+def _directions_in_hint(hint: str) -> tuple[str, ...]:
+    """Return distinct cardinal cues found in a natural-language hint."""
     lowered = hint.casefold()
     aliases = {
         "north": ("north", "northern", "upward"),
@@ -111,16 +135,83 @@ def parse_direction(hint: str) -> str | None:
         "east": ("east", "eastern", "rightward"),
         "west": ("west", "western", "leftward"),
     }
-    matches = [name for name, words in aliases.items() if any(word in lowered for word in words)]
+    return tuple(
+        name for name, words in aliases.items()
+        if any(word in lowered for word in words)
+    )
+
+
+def is_contradictory_hint(hint: str) -> bool:
+    """Return whether a hint contains opposite cardinal directions."""
+    directions = set(_directions_in_hint(hint))
+    return {"north", "south"} <= directions or {"east", "west"} <= directions
+
+
+def parse_direction(hint: str) -> str | None:
+    """Extract one unambiguous cardinal cue from natural language."""
+    matches = _directions_in_hint(hint)
     return matches[0] if len(matches) == 1 else None
+
+
+def hint_scent_alignment(
+    scent: Mapping[Coord, float], width: int, height: int, direction: str | None,
+) -> float:
+    """Return directional scent support in [-1, 1] for the parsed hint."""
+    if direction is None:
+        return 0.0
+    center_row, center_col = (height - 1) / 2, (width - 1) / 2
+    supporting = 0.0
+    opposing = 0.0
+    for cell, value in scent.items():
+        if value <= 0 or not (0 <= cell.row < height and 0 <= cell.col < width):
+            continue
+        offset = {
+            "north": center_row - cell.row,
+            "south": cell.row - center_row,
+            "east": cell.col - center_col,
+            "west": center_col - cell.col,
+        }[direction]
+        if offset > 0:
+            supporting += value * offset
+        elif offset < 0:
+            opposing += value * -offset
+    total = supporting + opposing
+    return 0.0 if total == 0 else (supporting - opposing) / total
+
+
+def hint_integration_strength(scent_alignment: float) -> float:
+    """Scale hint evidence down on conflict and up on scent agreement."""
+    if not -1 <= scent_alignment <= 1:
+        raise ValueError("scent alignment must lie in [-1, 1]")
+    return min(MAX_HINT_STRENGTH, max(MIN_HINT_STRENGTH, 1.0 + scent_alignment))
+
+
+def adjusted_truth_probability(truth_probability: float, scent_alignment: float) -> float:
+    """Temporarily update hint truth odds using current scent agreement."""
+    if not 0 <= truth_probability <= 1:
+        raise ValueError("truth probability must lie in [0, 1]")
+    if not -1 <= scent_alignment <= 1:
+        raise ValueError("scent alignment must lie in [-1, 1]")
+    truth_likelihood = 0.5 + SCENT_HINT_CONFIDENCE * scent_alignment
+    bluff_likelihood = 0.5 - SCENT_HINT_CONFIDENCE * scent_alignment
+    denominator = (
+        truth_probability * truth_likelihood
+        + (1.0 - truth_probability) * bluff_likelihood
+    )
+    if denominator == 0:
+        return truth_probability
+    return truth_probability * truth_likelihood / denominator
 
 
 def direction_likelihood(
     cell: Coord, belief: BeliefMap, direction: str | None, truth_probability: float,
+    hint_strength: float = 1.0,
 ) -> float:
-    """Weight a board half by the learned probability that hints are truthful."""
+    """Weight a board half by truth profile and scent-consistency strength."""
     if direction is None or truth_probability == 0.5:
         return 1.0
+    if hint_strength <= 0:
+        raise ValueError("hint strength must be positive")
     center_row, center_col = (belief.height - 1) / 2, (belief.width - 1) / 2
     matches = {
         "north": cell.row <= center_row,
@@ -129,7 +220,8 @@ def direction_likelihood(
         "west": cell.col <= center_col,
     }[direction]
     support = truth_probability if matches else 1.0 - truth_probability
-    return max(0.05, 2.0 * support)
+    base_likelihood = float(max(0.05, 2.0 * support))
+    return pow(base_likelihood, hint_strength)
 
 
 def normalize(

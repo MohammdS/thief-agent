@@ -9,6 +9,7 @@ from thief_agent.config.models import SharedConfig
 from thief_agent.crypto.audit import AuditRecord
 from thief_agent.domain.outcome import Outcome
 from thief_agent.domain.state import BoardState
+from thief_agent.language.profile import TruthProfile
 from thief_agent.protocol.service import ProtocolService
 from thief_agent.reliability.gatekeeper import ExternalGatekeeper
 from thief_agent.runtime.audit_replay import reconstruct_audited_subgame
@@ -32,7 +33,7 @@ async def finalize_game(
     config: SharedConfig, subgame: int, state: BoardState,
     own_audits: tuple[AuditRecord, ...], tokens: int, service: ProtocolService,
     client: PeerTransport, gate: ExternalGatekeeper, groups: tuple[str, str],
-    git_commit: str,
+    git_commit: str, opponent_profile: TruthProfile | None = None,
 ) -> FinalizedGame:
     """Exchange secrets, reconstruct the token sequence, and agree the result."""
     opponent_records = await exchange_audit(
@@ -40,6 +41,9 @@ async def finalize_game(
     )
     audits = ordered_audits((*own_audits, *opponent_records))
     audited = reconstruct_audited_subgame(config, audits)
+    if opponent_profile is not None:
+        for record in opponent_records:
+            opponent_profile.record_intent(record.disclosure.intent)
     opponent = await exchange_subgame_result(
         config, subgame, audited.state, audited.outcome, tokens, service, client,
         gate, groups, git_commit,

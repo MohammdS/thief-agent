@@ -10,9 +10,12 @@ from thief_agent.artifacts.match_log import MatchLogArtifact
 from thief_agent.artifacts.store import ArtifactStore
 from thief_agent.config import load_shared_config
 from thief_agent.config.models import SharedConfig
+from thief_agent.domain.types import Role
 from thief_agent.language.policy import HintPolicy
+from thief_agent.language.profile import TruthProfile
 from thief_agent.language.providers import TemplateHintProvider
 from thief_agent.orchestrator import ThiefOrchestrator
+from thief_agent.protocol.actions import HintIntent
 from thief_agent.qualification.client import StubClient
 from thief_agent.qualification.game import GameRun, run_game
 from thief_agent.qualification.logging import build_log
@@ -36,12 +39,16 @@ async def run_qualification(
     runs: list[GameRun] = []
     qualified: list[QualifiedGame] = []
     logs = []
+    hint_profile = TruthProfile()
     async with StubClient(stub_url) as client:
         if not await client.health():
             raise RuntimeError("qualification Police stub is not ready")
         for subgame in range(1, 7):
             orchestrator = build_orchestrator(output, subgame)
-            run = await run_game(config, subgame, client, orchestrator)
+            run = await run_game(config, subgame, client, orchestrator, hint_profile)
+            for record in run.records:
+                if record.payload.get("role") == Role.POLICE.value:
+                    hint_profile.record_intent(HintIntent(record.payload["intent"]))
             log = build_log(config.game_id, subgame, run, git_commit)
             replay = ReplayVerifier(config).verify(log)
             store.write("config", config.game_id, build_agreed_config(

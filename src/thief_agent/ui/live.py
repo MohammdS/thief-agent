@@ -17,6 +17,8 @@ class LiveGui:
         self._root = tk.Tk()
         self._root.title("Thief Peer - Local Truth")
         self._root.configure(bg="#0f172a")
+        self._snapshot = snapshot
+        self._show_scent = tk.BooleanVar(value=False)
         width = snapshot.width * CELL_SIZE + 2 * GRID_MARGIN
         height = snapshot.height * CELL_SIZE + 2 * GRID_MARGIN
         self._canvas = tk.Canvas(
@@ -38,6 +40,19 @@ class LiveGui:
             font=("Segoe UI", 11),
         )
         self._status.grid(row=0, column=1, sticky="nsew", padx=(0, 18), pady=18)
+        self._scent_toggle = tk.Checkbutton(
+            self._root,
+            text="Show scent overlay",
+            variable=self._show_scent,
+            command=self._toggle_scent,
+            bg="#0f172a",
+            fg="#e2e8f0",
+            activebackground="#0f172a",
+            activeforeground="#ffffff",
+            selectcolor="#334155",
+            anchor="w",
+        )
+        self._scent_toggle.grid(row=1, column=1, sticky="w", padx=(0, 18), pady=(0, 8))
         self._phase = tk.Label(
             self._root,
             font=("Segoe UI", 11, "bold"),
@@ -46,17 +61,23 @@ class LiveGui:
             bg="#1e293b",
             fg="#f8fafc",
         )
-        self._phase.grid(row=1, column=0, columnspan=2, pady=(0, 18))
+        self._phase.grid(row=2, column=0, columnspan=2, pady=(0, 18))
         self.update(snapshot)
 
     def update(self, snapshot: LiveSnapshot) -> None:
         """Refresh local board and lock controls outside the local turn."""
-        draw_live_board(self._canvas, snapshot)
-        self._status.configure(text=status_text(snapshot))
+        self._snapshot = snapshot
+        show_scent = bool(self._show_scent.get())
+        draw_live_board(self._canvas, snapshot, show_scent=show_scent)
+        self._status.configure(text=status_text(snapshot, show_scent=show_scent))
         self._phase.configure(
             text=phase_banner(snapshot),
             fg=phase_color(snapshot),
         )
+
+    def _toggle_scent(self) -> None:
+        """Redraw the current posterior with or without raw scent."""
+        self.update(self._snapshot)
 
     def run(self) -> None:
         """Enter the Tk event loop."""
@@ -78,7 +99,7 @@ class LiveGui:
         refresh()
 
 
-def status_text(snapshot: LiveSnapshot) -> str:
+def status_text(snapshot: LiveSnapshot, show_scent: bool = False) -> str:
     """Build the live status panel from information-safe fields."""
     token = "LOCAL (Thief)" if snapshot.local_turn else "OPPONENT / LOCKED"
     series = f"{snapshot.subgame}/{snapshot.series_size}" if snapshot.subgame else "not started"
@@ -104,10 +125,10 @@ def status_text(snapshot: LiveSnapshot) -> str:
             "Latest Police hint:",
             snapshot.latest_hint or "(silence)",
             "",
-            "RELATIVE COLOR MAP",
-            "Red = Police belief intensity",
-            "Blue = Police scent intensity",
-            "Purple = belief and scent overlap",
+            "BELIEF MAP" if not show_scent else "BELIEF MAP + SCENT OVERLAY",
+            "Red = final Police belief (scent + hint integrated)",
+            "Raw scent = hidden; use the toggle to show it" if not show_scent
+            else "Blue = raw Police scent; purple = overlap",
             "Green T = local Thief position",
             "Black = known barrier",
         )

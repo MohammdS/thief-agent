@@ -25,6 +25,16 @@ This keeps all movement reproducible and legality-testable. The benchmark artifa
 `artifacts/analysis/strategy-benchmark.json` records representative open, corner, wall,
 and revisit scenarios.
 
+The receiver keeps a smoothed `TruthProfile`, initialized at 0.5. Its current probability
+is passed into the hint likelihood during each live belief update, so a hint can help or
+mislead without ever selecting a physical action. Opposite directional words make a hint
+ambiguous and remove its evidence. For an unambiguous hint, the belief engine compares its
+direction with the signed directional balance of the received scent map: conflict lowers
+the hint exponent toward neutrality and temporarily lowers the current hint-truth odds so
+scent dominates, while agreement raises both so the two evidence sources reinforce one
+another. The persistent profile is updated only from the opponent's verified final-audit
+disclosures and is retained across subgames.
+
 ## Language provider
 
 Template language is the committed default. Opt-in Ollama `qwen3:8b` receives only one

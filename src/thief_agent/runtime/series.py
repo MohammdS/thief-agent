@@ -9,6 +9,7 @@ from thief_agent.artifacts.agreed_config import build_agreed_config
 from thief_agent.artifacts.declaration import DeclarationArtifact
 from thief_agent.artifacts.store import ArtifactStore
 from thief_agent.config import LocalConfig, SharedConfig
+from thief_agent.language.profile import TruthProfile
 from thief_agent.protocol.machine import MatchState, match_machine
 from thief_agent.protocol.service import ProtocolService
 from thief_agent.reliability.gatekeeper import ExternalGatekeeper
@@ -87,6 +88,7 @@ class PeerSeriesRunner:
             if self.local.ui.enabled else None
         )
         games = []
+        hint_profile = TruthProfile()
         for subgame in range(1, self.config.series.subgames + 1):
             orchestrator = build_orchestrator(self.config, self.local, self.output, subgame)
             offset = timedelta(
@@ -98,6 +100,7 @@ class PeerSeriesRunner:
                 self.gate, groups, self.git_commit, start,
                 self.local.strategy.hint_word_limit,
                 publisher,
+                hint_profile,
             )
             games.append(game)
             agreed = build_agreed_config(

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from thief_agent.protocol.actions import HintIntent
+
 
 @dataclass(slots=True)
 class TruthProfile:
@@ -29,3 +31,6 @@ class TruthProfile:
         else:
             self.deceptive += 1
 
+    def record_intent(self, intent: HintIntent) -> None:
+        """Convert an audited truth/bluff label into one profile observation."""
+        self.record(intent is HintIntent.TRUTH)

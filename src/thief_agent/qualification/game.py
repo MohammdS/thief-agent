@@ -13,6 +13,7 @@ from thief_agent.domain.outcome import Outcome, TerminalReason, evaluate_outcome
 from thief_agent.domain.scent import ScentMap, advance_scent
 from thief_agent.domain.state import BoardState
 from thief_agent.domain.types import Coord
+from thief_agent.language.profile import TruthProfile
 from thief_agent.orchestrator import ThiefOrchestrator
 from thief_agent.protocol.actions import ActionKind, HintIntent
 from thief_agent.protocol.scent import decode_scent
@@ -37,6 +38,7 @@ async def run_game(
     subgame: int,
     client: StubClient,
     orchestrator: ThiefOrchestrator,
+    hint_profile: TruthProfile | None = None,
 ) -> GameRun:
     """Run until capture, imprisonment, or survival without deadlock."""
     state = initial_state(config)
@@ -45,6 +47,7 @@ async def run_game(
     own_scent: ScentMap = {}
     records: list[LogRecord] = []
     tokens = 0
+    profile = hint_profile or TruthProfile()
     for step in range(1, config.turns.max_steps + 1):
         observation = local_observation(state, belief, scent, step)
         decision = await orchestrator.decide_turn(
@@ -83,6 +86,7 @@ async def run_game(
         scent = decode_scent(sealed.disclosure.scent_heatmap)
         belief = advance_delayed_belief(
             belief, scent, state.barriers, sealed.disclosure.hint,
+            truth_probability=profile.probability,
         )
         terminal = evaluate_outcome(state, config)
         if terminal:

@@ -19,8 +19,10 @@ from thief_agent.ui.model import (
 CELL, MARGIN, SIDE = 62, 36, 430
 
 
-def render_live_png(snapshot: LiveSnapshot, path: Path) -> None:
-    """Render a polished local-truth screenshot without a display server."""
+def render_live_png(
+    snapshot: LiveSnapshot, path: Path, show_scent: bool = False,
+) -> None:
+    """Render the belief screenshot, optionally with a raw scent overlay."""
     image, draw = base_image(snapshot.width, snapshot.height, "THIEF PEER - LOCAL TRUTH")
     belief_scale = heat_scale(snapshot.police_belief)
     scent_scale = heat_scale(snapshot.police_scent)
@@ -30,7 +32,7 @@ def render_live_png(snapshot: LiveSnapshot, path: Path) -> None:
             cell = Coord(row, col)
             fill = heat_color(
                 snapshot.police_belief.get(cell, 0) / belief_scale,
-                snapshot.police_scent.get(cell, 0) / scent_scale,
+                snapshot.police_scent.get(cell, 0) / scent_scale if show_scent else 0.0,
             )
             draw_cell(draw, cell, fill)
             if cell in snapshot.known_barriers:
@@ -53,10 +55,10 @@ def render_live_png(snapshot: LiveSnapshot, path: Path) -> None:
         "Latest Police hint:",
         snapshot.latest_hint or "(silence)",
         "",
-        "RELATIVE COLOR MAP",
-        "Red: Police belief",
-        "Blue: Police scent",
-        "Purple: overlap",
+        "BELIEF MAP" if not show_scent else "BELIEF MAP + SCENT OVERLAY",
+        "Red: final Police belief (scent + hint integrated)",
+        "Raw scent: hidden; use the live toggle to show it"
+        if not show_scent else "Blue: raw Police scent; purple: overlap",
         "Green T: local Thief",
         "Black: known barrier",
     ]

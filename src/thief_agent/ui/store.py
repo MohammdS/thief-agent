@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Mapping
 from pathlib import Path
 
 from thief_agent.domain.types import Coord
 from thief_agent.ui.model import LiveSnapshot
+
+REPLACE_RETRIES = 100
+REPLACE_DELAY_SECONDS = 0.01
 
 
 class LiveSnapshotStore:
@@ -41,13 +45,23 @@ class LiveSnapshotStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
         temporary.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
-        temporary.replace(self.path)
+        for attempt in range(REPLACE_RETRIES):
+            try:
+                temporary.replace(self.path)
+                return
+            except PermissionError:
+                if attempt == REPLACE_RETRIES - 1:
+                    raise
+                time.sleep(REPLACE_DELAY_SECONDS)
 
     def read(self) -> LiveSnapshot | None:
         """Load the latest complete snapshot when it exists."""
         if not self.path.is_file():
             return None
-        raw = json.loads(self.path.read_text(encoding="utf-8"))
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, PermissionError, json.JSONDecodeError):
+            return None
         return LiveSnapshot(
             raw["width"],
             raw["height"],

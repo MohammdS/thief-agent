@@ -17,8 +17,10 @@ CELL_SIZE = 62
 GRID_MARGIN = 28
 
 
-def draw_live_board(canvas: tk.Canvas, snapshot: LiveSnapshot) -> None:
-    """Draw local Thief truth without any objective Police marker."""
+def draw_live_board(
+    canvas: tk.Canvas, snapshot: LiveSnapshot, show_scent: bool = False,
+) -> None:
+    """Draw the belief map, optionally with a raw scent overlay."""
     canvas.delete("all")
     belief_scale = heat_scale(snapshot.police_belief)
     scent_scale = heat_scale(snapshot.police_scent)
@@ -29,7 +31,7 @@ def draw_live_board(canvas: tk.Canvas, snapshot: LiveSnapshot) -> None:
             x0, y0 = GRID_MARGIN + col * CELL_SIZE, GRID_MARGIN + row * CELL_SIZE
             fill = heat_color(
                 snapshot.police_belief.get(cell, 0.0) / belief_scale,
-                snapshot.police_scent.get(cell, 0.0) / scent_scale,
+                snapshot.police_scent.get(cell, 0.0) / scent_scale if show_scent else 0.0,
             )
             canvas.create_rectangle(
                 x0,

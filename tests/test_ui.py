@@ -42,7 +42,10 @@ def test_live_snapshot_has_no_objective_police_truth() -> None:
     assert "police_action" not in fields
     assert "Turn token: LOCAL (Thief)" in status_text(snapshot())
     assert "Subgame: 2/6" in status_text(snapshot())
-    assert "RELATIVE COLOR MAP" in status_text(snapshot())
+    assert "BELIEF MAP" in status_text(snapshot())
+    assert "Raw scent = hidden" in status_text(snapshot())
+    assert "BELIEF MAP + SCENT OVERLAY" in status_text(snapshot(), show_scent=True)
+    assert "Blue = raw Police scent" in status_text(snapshot(), show_scent=True)
     assert controls_enabled(snapshot())
     terminal = snapshot().__class__(
         7,
